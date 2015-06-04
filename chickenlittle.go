@@ -37,20 +37,13 @@ func main() {
 	c.DB.Open(c.Config.Service.DBFile)
 	defer c.DB.Close()
 
-	p := Person{
-		Username: "chris.snell",
-		FullName: "Christopher Snell",
-	}
-
-	err = c.StorePerson(&p)
-	if err != nil {
-		log.Fatalf("Could not store person: %+v\n", p)
-	}
-
 	router := mux.NewRouter().StrictSlash(true)
 
 	router.HandleFunc("/people", ListPeople).
 		Methods("GET")
+
+	router.HandleFunc("/people", CreatePerson).
+		Methods("POST")
 
 	router.HandleFunc("/people/{person}/", ShowPerson).
 		Methods("GET")
@@ -61,10 +54,19 @@ func main() {
 	router.HandleFunc("/people/{person}", UpdatePerson).
 		Methods("PUT")
 
-	router.HandleFunc("/people", CreatePerson).
+	router.HandleFunc("/plan", CreateNotificationPlan).
 		Methods("POST")
 
-	router.HandleFunc("/notify", NotifyPerson).
+	router.HandleFunc("/plan/{person}/", ShowNotificationPlan).
+		Methods("GET")
+
+	router.HandleFunc("/plan/{person}/", DeleteNotificationPlan).
+		Methods("DELETE")
+
+	router.HandleFunc("/plan/{person}", UpdateNotificationPlan).
+		Methods("PUT")
+
+	router.HandleFunc("/people/{person}/notify", NotifyPerson).
 		Methods("POST")
 
 	log.Fatal(http.ListenAndServe(c.Config.Service.ListenAddr, router))

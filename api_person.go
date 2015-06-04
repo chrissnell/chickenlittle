@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type Response struct {
+type PeopleResponse struct {
 	People  []Person `json:"people"`
 	Message string   `json:"message"`
 	Error   string   `json:"error"`
@@ -26,7 +26,7 @@ type Notification struct {
 }
 
 func ListPeople(w http.ResponseWriter, r *http.Request) {
-	var res Response
+	var res PeopleResponse
 
 	p, err := c.GetAllPeople()
 	if err != nil {
@@ -44,7 +44,7 @@ func ListPeople(w http.ResponseWriter, r *http.Request) {
 }
 
 func ShowPerson(w http.ResponseWriter, r *http.Request) {
-	var res Response
+	var res PeopleResponse
 
 	vars := mux.Vars(r)
 	username := vars["person"]
@@ -63,7 +63,7 @@ func ShowPerson(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeletePerson(w http.ResponseWriter, r *http.Request) {
-	var res Response
+	var res PeopleResponse
 
 	vars := mux.Vars(r)
 	username := vars["person"]
@@ -80,7 +80,7 @@ func DeletePerson(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreatePerson(w http.ResponseWriter, r *http.Request) {
-	var res Response
+	var res PeopleResponse
 	var p Person
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*10))
@@ -120,7 +120,7 @@ func CreatePerson(w http.ResponseWriter, r *http.Request) {
 	if fp != nil && fp.Username != "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = fmt.Sprint("User ", p.Username, " already exists. Use PUT to update.")
+		res.Error = fmt.Sprint("User ", p.Username, " already exists. Use PUT /people/", p.Username, "/ to update.")
 		json.NewEncoder(w).Encode(res)
 		return
 	}
@@ -144,7 +144,7 @@ func CreatePerson(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdatePerson(w http.ResponseWriter, r *http.Request) {
-	var res Response
+	var res PeopleResponse
 	var p Person
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*10))
@@ -211,8 +211,11 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 
 func NotifyPerson(w http.ResponseWriter, r *http.Request) {
 
-	var n []Notification
-	var res Response
+	var n Notification
+	var res PeopleResponse
+
+	vars := mux.Vars(r)
+	username := vars["person"]
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*10))
 	// If something went wrong, return an error in the JSON response
@@ -240,32 +243,29 @@ func NotifyPerson(w http.ResponseWriter, r *http.Request) {
 
 	vo := victorops.NewClient(c.Config.Integrations.VictorOps.APIKey)
 
-	for _, person := range n {
-		log.Println("Person:", person.Username)
-		p, err := c.GetPerson(person.Username)
-		if err != nil {
-			res.Error = err.Error()
-			log.Println("config.GetPerson() Error:", err)
-			json.NewEncoder(w).Encode(res)
-			return
-		}
-
-		e := &victorops.Event{
-			RoutingKey:  p.VictorOpsRoutingKey,
-			MessageType: victorops.Critical,
-			EntityID:    person.Message,
-			Timestamp:   time.Now(),
-		}
-
-		resp, err := vo.SendAlert(e)
-		if err != nil {
-			res.Error = err.Error()
-			log.Println("Error:", err)
-			json.NewEncoder(w).Encode(res)
-			return
-		}
-		log.Println("VO Response - Result:", resp.Result, "EntityID:", resp.EntityID, "Message:", resp.EntityID)
+	p, err := c.GetPerson(username)
+	if err != nil {
+		res.Error = err.Error()
+		log.Println("config.GetPerson() Error:", err)
+		json.NewEncoder(w).Encode(res)
+		return
 	}
+
+	e := &victorops.Event{
+		RoutingKey:  p.VictorOpsRoutingKey,
+		MessageType: victorops.Critical,
+		EntityID:    n.Message,
+		Timestamp:   time.Now(),
+	}
+
+	resp, err := vo.SendAlert(e)
+	if err != nil {
+		res.Error = err.Error()
+		log.Println("Error:", err)
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+	log.Println("VO Response - Result:", resp.Result, "EntityID:", resp.EntityID, "Message:", resp.EntityID)
 	return
 
 }

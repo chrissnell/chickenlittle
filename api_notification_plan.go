@@ -1,0 +1,216 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
+	"net/http"
+
+	"github.com/gorilla/mux"
+)
+
+type NotificationPlanResponse struct {
+	NotificationPlan NotificationPlan `json:"people"`
+	Message          string           `json:"message"`
+	Error            string           `json:"error"`
+}
+
+func ShowNotificationPlan(w http.ResponseWriter, r *http.Request) {
+	var res NotificationPlanResponse
+
+	vars := mux.Vars(r)
+	username := vars["person"]
+
+	p, err := c.GetNotificationPlan(username)
+	if err != nil {
+		res.Error = err.Error()
+		errjson, _ := json.Marshal(res)
+		http.Error(w, string(errjson), http.StatusNotFound)
+		return
+	}
+
+	res.NotificationPlan = *p
+
+	json.NewEncoder(w).Encode(res)
+}
+
+func DeleteNotificationPlan(w http.ResponseWriter, r *http.Request) {
+	var res NotificationPlanResponse
+
+	vars := mux.Vars(r)
+	username := vars["person"]
+
+	err := c.DeleteNotificationPlan(username)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	res.Message = fmt.Sprint("Notification plan for user ", username, " deleted")
+
+	json.NewEncoder(w).Encode(res)
+}
+
+func CreateNotificationPlan(w http.ResponseWriter, r *http.Request) {
+	var res NotificationPlanResponse
+	var p NotificationPlan
+
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*15))
+	// If something went wrong, return an error in the JSON response
+	if err != nil {
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	err = r.Body.Close()
+	if err != nil {
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	err = json.Unmarshal(body, &p)
+
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	if p.Username == "" {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = "Must provide username field in JSON"
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	fp, err := c.GetPerson(p.Username)
+	if fp != nil && fp.Username == "" {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = fmt.Sprint("User ", p.Username, " does not exist. Create the user first before adding a notification plan for them.")
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+	if err != nil {
+		log.Println("GetPerson() failed:", err)
+	}
+
+	if len(p.Steps) == 0 {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = "Must provide at least one notification step in JSON"
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	np, err := c.GetNotificationPlan(p.Username)
+	if np != nil && np.Username != "" {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = fmt.Sprint("Notification plan for user ", p.Username, " already exists. Use PUT /plan/", p.Username, "/ to update..")
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+	if err != nil {
+		log.Println("GetNotificationPlan() failed for", p.Username)
+	}
+
+	err = c.StoreNotificationPlan(&p)
+	if err != nil {
+		log.Println("Error storing notification plan:", err)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	res.Message = fmt.Sprint("Notification plan for user ", p.Username, " created")
+
+	json.NewEncoder(w).Encode(res)
+}
+
+func UpdateNotificationPlan(w http.ResponseWriter, r *http.Request) {
+	var res NotificationPlanResponse
+	var p NotificationPlan
+
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*15))
+	// If something went wrong, return an error in the JSON response
+	if err != nil {
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	err = r.Body.Close()
+	if err != nil {
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	err = json.Unmarshal(body, &p)
+
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	if p.Username == "" {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = "Must provide username field in JSON"
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	fp, err := c.GetPerson(p.Username)
+	if fp != nil && fp.Username == "" {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = fmt.Sprint("Can't update notification plan for user (", p.Username, ") that does not exist.")
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+	if err != nil {
+		log.Println("GetPerson() failed:", err)
+	}
+
+	np, err := c.GetNotificationPlan(p.Username)
+	if np != nil && np.Username == "" {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = fmt.Sprint("Notification plan for user ", p.Username, " doesn't exist. Use POST /plan to create one first before attempting to update.")
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+	if err != nil {
+		log.Println("GetNotificationPlan() failed for", p.Username)
+	}
+
+	err = c.StoreNotificationPlan(&p)
+	if err != nil {
+		log.Println("Error storing notification plan:", err)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	res.NotificationPlan = p
+	res.Message = fmt.Sprint("Notification plan for user ", p.Username, " updated")
+
+	json.NewEncoder(w).Encode(res)
+
+}
