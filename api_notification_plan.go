@@ -12,7 +12,7 @@ import (
 )
 
 type NotificationPlanResponse struct {
-	NotificationPlan NotificationPlan `json:"people"`
+	NotificationPlan NotificationPlan `json:"people,omitempty"`
 	Message          string           `json:"message"`
 	Error            string           `json:"error"`
 }
