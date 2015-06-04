@@ -19,6 +19,7 @@ var (
 type ChickenLittle struct {
 	Config Config
 	People map[string]*Person
+	np     map[string]*NotificationProdcedure
 	DB     DB
 	mu     sync.Mutex
 }
@@ -42,15 +43,15 @@ func main() {
 	c.DB.Open(c.Config.Service.DBFile)
 	defer c.DB.Close()
 
-	// p := Person{
-	// 	Username: "chris.snell",
-	// 	FullName: "Christopher Snell",
-	// }
+	p := Person{
+		Username: "chris.snell",
+		FullName: "Christopher Snell",
+	}
 
-	// err = c.StorePerson(&p)
-	// if err != nil {
-	// 	log.Fatalf("Could not store person: %+v\n", p)
-	// }
+	err = c.StorePerson(&p)
+	if err != nil {
+		log.Fatalf("Could not store person: %+v\n", p)
+	}
 
 	router := mux.NewRouter().StrictSlash(true)
 
@@ -59,6 +60,9 @@ func main() {
 
 	router.HandleFunc("/people/{person}/", ShowPerson).
 		Methods("GET")
+
+	router.HandleFunc("/people/{person}/", DeletePerson).
+		Methods("DELETE")
 
 	router.HandleFunc("/notify", NotifyPerson).
 		Methods("POST")

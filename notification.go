@@ -24,7 +24,8 @@ type NotificationStep struct {
 }
 
 type NotificationProdcedure struct {
-	Steps []NotificationStep `json:",omitempty"`
+	Username string
+	Steps    []NotificationStep `json:",omitempty"`
 }
 
 func (np *NotificationProdcedure) Marshal() ([]byte, error) {

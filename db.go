@@ -31,14 +31,35 @@ func (d *DB) Store(bucket, key, value string) error {
 	log.Println("Storing:", key)
 
 	err := d.Handle.Update(func(tx *bolt.Tx) error {
-		bucket, err := tx.CreateBucketIfNotExists([]byte(bucket))
+		bkt, err := tx.CreateBucketIfNotExists([]byte(bucket))
 		if err != nil {
 			return fmt.Errorf("Could not create bucket %q", bucket)
 		}
 
-		err = bucket.Put([]byte(key), []byte(value))
+		err = bkt.Put([]byte(key), []byte(value))
 		if err != nil {
-			return fmt.Errorf("Could not write key %q to bucket %q", key, bucket)
+			return fmt.Errorf("Could not write key %q to bucket %q: %v", key, bucket, err)
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+func (d *DB) Delete(bucket, key string) error {
+
+	log.Println("Deleting", key, "from bucket", bucket)
+
+	err := d.Handle.Update(func(tx *bolt.Tx) error {
+		bkt := tx.Bucket([]byte(bucket))
+		if bkt == nil {
+			return fmt.Errorf("Could not locate bucket to delete: %q", bucket)
+		}
+
+		err := bkt.Delete([]byte(key))
+		if err != nil {
+			return fmt.Errorf("Could not delete bucket %q: %v", bucket, err)
 		}
 
 		return nil
@@ -54,12 +75,12 @@ func (d *DB) Fetch(bucket, key string) (string, error) {
 	log.Println("Fetching:", key)
 
 	err := d.Handle.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(bucket))
-		if bucket == nil {
+		bkt := tx.Bucket([]byte(bucket))
+		if bkt == nil {
 			return fmt.Errorf("Bucket %q not found!", bucket)
 		}
 
-		val = string(bucket.Get([]byte(key)))
+		val = string(bkt.Get([]byte(key)))
 
 		return nil
 	})

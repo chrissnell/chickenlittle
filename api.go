@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -13,8 +14,9 @@ import (
 )
 
 type Response struct {
-	People []Person `json:"people"`
-	Error  string
+	People  []Person `json:"people"`
+	Message string   `json:"message"`
+	Error   string   `json:"error"`
 }
 
 type Notification struct {
@@ -41,11 +43,30 @@ func ShowPerson(w http.ResponseWriter, r *http.Request) {
 
 	p, err := c.GetPerson(username)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		res.Error = err.Error()
+		errjson, _ := json.Marshal(res)
+		http.Error(w, string(errjson), http.StatusNotFound)
 		return
 	}
 
 	res.People = append(res.People, *p.Sanitized())
+
+	json.NewEncoder(w).Encode(res)
+}
+
+func DeletePerson(w http.ResponseWriter, r *http.Request) {
+	var res Response
+
+	vars := mux.Vars(r)
+	username := vars["person"]
+
+	err := c.DeletePerson(username)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	res.Message = fmt.Sprint("User ", username, " deleted")
 
 	json.NewEncoder(w).Encode(res)
 }

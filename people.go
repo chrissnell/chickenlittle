@@ -6,10 +6,9 @@ import (
 )
 
 type Person struct {
-	Username               string                 `yaml:"username"`
-	FullName               string                 `yaml:"full_name"`
-	VictorOpsRoutingKey    string                 `yaml:"victorops_routing_key" json:"victorops_routing_key,omitempty"`
-	NotificationProdcedure NotificationProdcedure `json:"-"`
+	Username            string `yaml:"username"`
+	FullName            string `yaml:"full_name"`
+	VictorOpsRoutingKey string `yaml:"victorops_routing_key" json:"victorops_routing_key,omitempty"`
 }
 
 func (p *Person) Marshal() ([]byte, error) {
@@ -53,10 +52,7 @@ func (c *ChickenLittle) RefreshPersonFromDB(p string) error {
 
 func (c *ChickenLittle) GetPerson(p string) (*Person, error) {
 
-	err := c.RefreshPersonFromDB(p)
-	if err != nil {
-		return nil, err
-	}
+	c.RefreshPersonFromDB(p)
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -82,6 +78,20 @@ func (c *ChickenLittle) StorePerson(p *Person) error {
 	}
 
 	err = c.DB.Store("people", p.Username, string(jp))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *ChickenLittle) DeletePerson(p string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	delete(c.People, p)
+
+	err := c.DB.Delete("people", p)
 	if err != nil {
 		return err
 	}
