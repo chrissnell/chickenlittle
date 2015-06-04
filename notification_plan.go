@@ -18,15 +18,15 @@ const (
 )
 
 type NotificationStep struct {
-	Method            Method
-	Data              string
-	NotifyEveryPeriod time.Duration
-	NotifyUntilPeriod time.Duration
+	Method            Method        `json:"method"`
+	Data              string        `json:"data"`
+	NotifyEveryPeriod time.Duration `json:"notify_every_period"`
+	NotifyUntilPeriod time.Duration `json:"notify_until_period"`
 }
 
 type NotificationPlan struct {
-	Username string
-	Steps    []NotificationStep `json:",omitempty"`
+	Username string             `json:"username"`
+	Steps    []NotificationStep `json:"steps,omitempty"`
 }
 
 func (np *NotificationPlan) Marshal() ([]byte, error) {

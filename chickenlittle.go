@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"time"
+
 	"github.com/gorilla/mux"
 
 	"gopkg.in/yaml.v2"
@@ -36,6 +38,19 @@ func main() {
 	// Open our BoltDB handle
 	c.DB.Open(c.Config.Service.DBFile)
 	defer c.DB.Close()
+
+	np := &NotificationPlan{}
+	np.Username = "evan.snell"
+	np.Steps = append(np.Steps, NotificationStep{Method: Voice,
+		Data:              "2108593107",
+		NotifyUntilPeriod: time.Minute * 5,
+		NotifyEveryPeriod: time.Minute,
+	})
+
+	err = c.StoreNotificationPlan(np)
+	if err != nil {
+		log.Fatalln("Could not store notification plan:", np)
+	}
 
 	router := mux.NewRouter().StrictSlash(true)
 

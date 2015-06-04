@@ -114,7 +114,7 @@ func CreateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 	if np != nil && np.Username != "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = fmt.Sprint("Notification plan for user ", p.Username, " already exists. Use PUT /plan/", p.Username, "/ to update..")
+		res.Error = fmt.Sprint("Notification plan for user ", p.Username, " already exists. Use PUT /plan/", p.Username, " to update..")
 		json.NewEncoder(w).Encode(res)
 		return
 	}
@@ -139,7 +139,10 @@ func CreateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 
 func UpdateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 	var res NotificationPlanResponse
-	var p NotificationPlan
+	var p []NotificationStep
+
+	vars := mux.Vars(r)
+	username := vars["person"]
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*15))
 	// If something went wrong, return an error in the JSON response
@@ -166,19 +169,19 @@ func UpdateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if p.Username == "" {
+	if username == "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = "Must provide username field in JSON"
+		res.Error = "Must provide username in URL"
 		json.NewEncoder(w).Encode(res)
 		return
 	}
 
-	fp, err := c.GetPerson(p.Username)
+	fp, err := c.GetPerson(username)
 	if fp != nil && fp.Username == "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = fmt.Sprint("Can't update notification plan for user (", p.Username, ") that does not exist.")
+		res.Error = fmt.Sprint("Can't update notification plan for user (", username, ") that does not exist.")
 		json.NewEncoder(w).Encode(res)
 		return
 	}
@@ -186,19 +189,21 @@ func UpdateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 		log.Println("GetPerson() failed:", err)
 	}
 
-	np, err := c.GetNotificationPlan(p.Username)
+	np, err := c.GetNotificationPlan(username)
 	if np != nil && np.Username == "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = fmt.Sprint("Notification plan for user ", p.Username, " doesn't exist. Use POST /plan to create one first before attempting to update.")
+		res.Error = fmt.Sprint("Notification plan for user ", username, " doesn't exist. Use POST /plan to create one first before attempting to update.")
 		json.NewEncoder(w).Encode(res)
 		return
 	}
 	if err != nil {
-		log.Println("GetNotificationPlan() failed for", p.Username)
+		log.Println("GetNotificationPlan() failed for", username)
 	}
 
-	err = c.StoreNotificationPlan(&p)
+	np.Steps = p
+
+	err = c.StoreNotificationPlan(np)
 	if err != nil {
 		log.Println("Error storing notification plan:", err)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -208,8 +213,8 @@ func UpdateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res.NotificationPlan = p
-	res.Message = fmt.Sprint("Notification plan for user ", p.Username, " updated")
+	res.NotificationPlan = *np
+	res.Message = fmt.Sprint("Notification plan for user ", username, " updated")
 
 	json.NewEncoder(w).Encode(res)
 
