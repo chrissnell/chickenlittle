@@ -6,10 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"time"
-
 	"github.com/gorilla/mux"
-
 	"gopkg.in/yaml.v2"
 )
 
@@ -39,19 +36,6 @@ func main() {
 	c.DB.Open(c.Config.Service.DBFile)
 	defer c.DB.Close()
 
-	np := &NotificationPlan{}
-	np.Username = "evan.snell"
-	np.Steps = append(np.Steps, NotificationStep{Method: Voice,
-		Data:              "2108593107",
-		NotifyUntilPeriod: time.Minute * 5,
-		NotifyEveryPeriod: time.Minute,
-	})
-
-	err = c.StoreNotificationPlan(np)
-	if err != nil {
-		log.Fatalln("Could not store notification plan:", np)
-	}
-
 	router := mux.NewRouter().StrictSlash(true)
 
 	router.HandleFunc("/people", ListPeople).
@@ -60,22 +44,22 @@ func main() {
 	router.HandleFunc("/people", CreatePerson).
 		Methods("POST")
 
-	router.HandleFunc("/people/{person}/", ShowPerson).
+	router.HandleFunc("/people/{person}", ShowPerson).
 		Methods("GET")
 
-	router.HandleFunc("/people/{person}/", DeletePerson).
+	router.HandleFunc("/people/{person}", DeletePerson).
 		Methods("DELETE")
 
 	router.HandleFunc("/people/{person}", UpdatePerson).
 		Methods("PUT")
 
-	router.HandleFunc("/plan", CreateNotificationPlan).
+	router.HandleFunc("/plan/{person}", CreateNotificationPlan).
 		Methods("POST")
 
-	router.HandleFunc("/plan/{person}/", ShowNotificationPlan).
+	router.HandleFunc("/plan/{person}", ShowNotificationPlan).
 		Methods("GET")
 
-	router.HandleFunc("/plan/{person}/", DeleteNotificationPlan).
+	router.HandleFunc("/plan/{person}", DeleteNotificationPlan).
 		Methods("DELETE")
 
 	router.HandleFunc("/plan/{person}", UpdateNotificationPlan).

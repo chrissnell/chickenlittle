@@ -14,7 +14,7 @@ import (
 )
 
 type PeopleResponse struct {
-	People  []Person `json:"people"`
+	People  []Person `json:"people,omitempty"`
 	Message string   `json:"message"`
 	Error   string   `json:"error"`
 }
@@ -147,6 +147,9 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 	var res PeopleResponse
 	var p Person
 
+	vars := mux.Vars(r)
+	username := vars["person"]
+
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*10))
 	// If something went wrong, return an error in the JSON response
 	if err != nil {
@@ -172,15 +175,15 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if p.Username == "" || p.FullName == "" {
+	if p.FullName == "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = "Must provide username and fullname"
+		res.Error = "Must provide a fullname to update"
 		json.NewEncoder(w).Encode(res)
 		return
 	}
 
-	fp, err := c.GetPerson(p.Username)
+	fp, err := c.GetPerson(username)
 	if fp != nil && fp.Username == "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
@@ -189,8 +192,11 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		log.Println("GetPerson() failed for", p.Username)
+		log.Println("GetPerson() failed for", username)
 	}
+
+	// Now that we know our user exists in the DB, copy the username from the URI path and add it to our struct
+	p.Username = username
 
 	err = c.StorePerson(&p)
 	if err != nil {
@@ -203,7 +209,7 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res.People = append(res.People, p)
-	res.Message = fmt.Sprint("User ", p.Username, " updated")
+	res.Message = fmt.Sprint("User ", username, " updated")
 
 	json.NewEncoder(w).Encode(res)
 
