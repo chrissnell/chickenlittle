@@ -1,12 +1,6 @@
-people:
-- user: joe
-  victorops_routing_key: joeuser
-  full_name: Joe User
-- user: sam
-  victorops_routing_key: samadmin
-  full_name: Sam Admin
 service:
   listen_address: :7072
+  db_file: ./chickenlittle.db
 integrations:
   hipchat:
     hipchat_auth_token: NotYetImplemented

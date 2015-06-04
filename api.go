@@ -13,12 +13,12 @@ import (
 )
 
 type Response struct {
-	People []Person `json:"people,omitempty"`
+	People []Person `json:"people"`
 	Error  string
 }
 
 type Notification struct {
-	User     string                `json:"user"`
+	Username string                `json:"username"`
 	Message  string                `json:"message"`
 	Priority victorops.MessageType `json:"priority,omitempty"`
 }
@@ -26,7 +26,7 @@ type Notification struct {
 func ListPeople(w http.ResponseWriter, r *http.Request) {
 	var res Response
 
-	for _, v := range config.People {
+	for _, v := range c.People {
 		res.People = append(res.People, *v.Sanitized())
 	}
 
@@ -39,7 +39,7 @@ func ShowPerson(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["person"]
 
-	p, err := config.GetPerson(username)
+	p, err := c.GetPerson(username)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -79,11 +79,11 @@ func NotifyPerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vo := victorops.NewClient(config.Integrations.VictorOps.APIKey)
+	vo := victorops.NewClient(c.Config.Integrations.VictorOps.APIKey)
 
 	for _, person := range n {
-		log.Println("Person:", person.User)
-		p, err := config.GetPerson(person.User)
+		log.Println("Person:", person.Username)
+		p, err := c.GetPerson(person.Username)
 		if err != nil {
 			res.Error = err.Error()
 			log.Println("config.GetPerson() Error:", err)
