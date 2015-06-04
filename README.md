@@ -68,3 +68,42 @@ POST /people
   "error": ""
 }
 ```
+
+## Update a person
+**Request**
+```
+PUT /people/USERNAME
+
+{
+  "fullname": "Sir Lancelot the Brave"
+}
+```
+
+**Example Response**
+```json
+{
+  "people": [
+    {
+      "username": "lancelot",
+      "fullname": "Sir Lancelot the Brave"
+    }
+  ],
+  "message": "User lancelot updated",
+  "error": ""
+}
+```
+
+## Delete a person
+**Request**
+```
+DELETE /people/USERNAME
+```
+
+**Example Response**
+```json
+{
+  "message": "User lancelot deleted",
+  "error": ""
+}
+```
+
