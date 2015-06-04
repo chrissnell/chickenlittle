@@ -72,7 +72,7 @@ func (d *DB) Fetch(bucket, key string) (string, error) {
 
 	var val string
 
-	log.Println("Fetching:", key)
+	log.Println("Fetching", key, "from bucket", bucket)
 
 	err := d.Handle.View(func(tx *bolt.Tx) error {
 		bkt := tx.Bucket([]byte(bucket))
@@ -90,4 +90,32 @@ func (d *DB) Fetch(bucket, key string) (string, error) {
 	}
 
 	return val, err
+}
+
+func (d *DB) FetchAll(bucket string) ([]string, error) {
+	var vals []string
+
+	log.Println("Fetching all from bucket", bucket)
+
+	err := d.Handle.View(func(tx *bolt.Tx) error {
+		bkt := tx.Bucket([]byte(bucket))
+		if bkt == nil {
+			return fmt.Errorf("Bucket %q not found!", bucket)
+		}
+
+		bkt.ForEach(func(k, v []byte) error {
+			vals = append(vals, string(v))
+			return nil
+		})
+
+		if len(vals) == 0 {
+			return fmt.Errorf("There are no keys in bucket", bucket)
+
+		}
+
+		return nil
+	})
+
+	return vals, err
+
 }

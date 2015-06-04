@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
-	"sync"
 
 	"github.com/gorilla/mux"
 
@@ -18,15 +17,10 @@ var (
 
 type ChickenLittle struct {
 	Config Config
-	People map[string]*Person
-	np     map[string]*NotificationProdcedure
 	DB     DB
-	mu     sync.Mutex
 }
 
 func main() {
-
-	c.People = make(map[string]*Person)
 
 	// Read our server configuration
 	filename, _ := filepath.Abs("./config.yaml")
@@ -63,6 +57,12 @@ func main() {
 
 	router.HandleFunc("/people/{person}/", DeletePerson).
 		Methods("DELETE")
+
+	router.HandleFunc("/people/{person}", UpdatePerson).
+		Methods("PUT")
+
+	router.HandleFunc("/people", CreatePerson).
+		Methods("POST")
 
 	router.HandleFunc("/notify", NotifyPerson).
 		Methods("POST")

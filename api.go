@@ -28,8 +28,16 @@ type Notification struct {
 func ListPeople(w http.ResponseWriter, r *http.Request) {
 	var res Response
 
-	for _, v := range c.People {
-		res.People = append(res.People, *v.Sanitized())
+	p, err := c.GetAllPeople()
+	if err != nil {
+		res.Error = err.Error()
+		errjson, _ := json.Marshal(res)
+		http.Error(w, string(errjson), http.StatusInternalServerError)
+		return
+	}
+
+	for _, v := range p {
+		res.People = append(res.People, *v)
 	}
 
 	json.NewEncoder(w).Encode(res)
@@ -69,6 +77,136 @@ func DeletePerson(w http.ResponseWriter, r *http.Request) {
 	res.Message = fmt.Sprint("User ", username, " deleted")
 
 	json.NewEncoder(w).Encode(res)
+}
+
+func CreatePerson(w http.ResponseWriter, r *http.Request) {
+	var res Response
+	var p Person
+
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*10))
+	// If something went wrong, return an error in the JSON response
+	if err != nil {
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	err = r.Body.Close()
+	if err != nil {
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	err = json.Unmarshal(body, &p)
+
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	if p.Username == "" || p.FullName == "" {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = "Must provide username and fullname"
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	fp, err := c.GetPerson(p.Username)
+	if fp != nil && fp.Username != "" {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = fmt.Sprint("User ", p.Username, " already exists. Use PUT to update.")
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+	if err != nil {
+		log.Println("GetPerson() failed:", err)
+	}
+
+	err = c.StorePerson(&p)
+	if err != nil {
+		log.Println("Error storing person:", err)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	res.Message = fmt.Sprint("User ", p.Username, " created")
+
+	json.NewEncoder(w).Encode(res)
+}
+
+func UpdatePerson(w http.ResponseWriter, r *http.Request) {
+	var res Response
+	var p Person
+
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*10))
+	// If something went wrong, return an error in the JSON response
+	if err != nil {
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	err = r.Body.Close()
+	if err != nil {
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	err = json.Unmarshal(body, &p)
+
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	if p.Username == "" || p.FullName == "" {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = "Must provide username and fullname"
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	fp, err := c.GetPerson(p.Username)
+	if fp != nil && fp.Username == "" {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = fmt.Sprint("User ", p.Username, " does not exist. Use POST to create.")
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+	if err != nil {
+		log.Println("GetPerson() failed for", p.Username)
+	}
+
+	err = c.StorePerson(&p)
+	if err != nil {
+		log.Println("Error storing person:", err)
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	res.People = append(res.People, p)
+	res.Message = fmt.Sprint("User ", p.Username, " updated")
+
+	json.NewEncoder(w).Encode(res)
+
 }
 
 func NotifyPerson(w http.ResponseWriter, r *http.Request) {

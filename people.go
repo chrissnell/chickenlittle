@@ -6,8 +6,8 @@ import (
 )
 
 type Person struct {
-	Username            string `yaml:"username"`
-	FullName            string `yaml:"full_name"`
+	Username            string `yaml:"username" json:"username"`
+	FullName            string `yaml:"full_name" json:"fullname"`
 	VictorOpsRoutingKey string `yaml:"victorops_routing_key" json:"victorops_routing_key,omitempty"`
 }
 
@@ -29,49 +29,45 @@ func (p *Person) Sanitized() *Person {
 	return &sp
 }
 
-func (c *ChickenLittle) RefreshPersonFromDB(p string) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
+func (c *ChickenLittle) GetPerson(p string) (*Person, error) {
 	jp, err := c.DB.Fetch("people", p)
 	if err != nil {
-		return fmt.Errorf("Could not fetch person %v from DB", p)
+		return nil, fmt.Errorf("Could not fetch person %v from DB", p)
 	}
 
 	peep := &Person{}
 
 	err = peep.Unmarshal(jp)
 	if err != nil {
-		return fmt.Errorf("Could not unmarshal person from DB.  Err: %v  JSON: %v", err, jp)
-	}
-
-	c.People[p] = peep
-
-	return nil
-}
-
-func (c *ChickenLittle) GetPerson(p string) (*Person, error) {
-
-	c.RefreshPersonFromDB(p)
-
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	peep, pres := c.People[p]
-
-	if !pres {
-		return nil, fmt.Errorf("No such person: %v", p)
+		return nil, fmt.Errorf("Could not unmarshal person from DB.  Err: %v  JSON: %v", err, jp)
 	}
 
 	return peep, nil
 }
 
+func (c *ChickenLittle) GetAllPeople() ([]*Person, error) {
+	var peeps []*Person
+
+	jp, err := c.DB.FetchAll("people")
+	if err != nil {
+		return nil, fmt.Errorf("Could not fetch all people from DB")
+	}
+
+	for _, v := range jp {
+		peep := &Person{}
+
+		err = peep.Unmarshal(v)
+		if err != nil {
+			return nil, fmt.Errorf("Could not unmarshal person from DB.  Err: %v  JSON: %v", err, jp)
+		}
+
+		peeps = append(peeps, peep)
+	}
+
+	return peeps, nil
+}
+
 func (c *ChickenLittle) StorePerson(p *Person) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.People[p.Username] = p
-
 	jp, err := p.Marshal()
 	if err != nil {
 		return fmt.Errorf("Could not marshal person %+v", p)
@@ -86,11 +82,6 @@ func (c *ChickenLittle) StorePerson(p *Person) error {
 }
 
 func (c *ChickenLittle) DeletePerson(p string) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	delete(c.People, p)
-
 	err := c.DB.Delete("people", p)
 	if err != nil {
 		return err
