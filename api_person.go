@@ -215,7 +215,7 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func NotifyPerson(w http.ResponseWriter, r *http.Request) {
+func NotifyPersonViaVictorops(w http.ResponseWriter, r *http.Request) {
 
 	var n Notification
 	var res PeopleResponse

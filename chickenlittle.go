@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	c ChickenLittle
+	c        ChickenLittle
+	planChan = make(chan *NotificationPlan)
 )
 
 type ChickenLittle struct {
@@ -35,6 +36,8 @@ func main() {
 	// Open our BoltDB handle
 	c.DB.Open(c.Config.Service.DBFile)
 	defer c.DB.Close()
+
+	go StartNotificationEngine()
 
 	router := mux.NewRouter().StrictSlash(true)
 
