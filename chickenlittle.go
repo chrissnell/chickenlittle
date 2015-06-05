@@ -12,6 +12,7 @@ import (
 
 var (
 	c        ChickenLittle
+	NIP      NotificationsInProgress
 	planChan = make(chan *NotificationPlan)
 )
 

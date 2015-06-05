@@ -1,21 +1,14 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
-	"net/http"
 	"strconv"
 	"sync"
 	"time"
-
-	"github.com/gorilla/mux"
-	"github.com/twinj/uuid"
 )
 
 var (
-	stopChan   chan string
-	timerChan  <-chan time.Time
-	tickerChan <-chan time.Time
+	stopChan chan string
 )
 
 type NotificationsInProgress struct {
@@ -23,16 +16,7 @@ type NotificationsInProgress struct {
 	Mu       sync.Mutex
 }
 
-type NotifyPersonResponse struct {
-	Username string `json:"username"`
-	UUID     string `json:"uuid"`
-	Message  string `json:"message"`
-	Error    string `json:"error"`
-}
-
 func StartNotificationEngine() {
-	var NIP NotificationsInProgress
-
 	// Initialize our map of Stopper channels
 	// UUID -> channel
 	NIP.Stoppers = make(map[string]chan bool)
@@ -42,7 +26,10 @@ func StartNotificationEngine() {
 	for {
 
 		select {
+		// IMPROVEMENT: We could implement a close() of planChan to indicate that the service is shutting down
+		//              and instruct all notifications to cease
 		case np := <-planChan:
+
 			// We've received a new notification plan
 			log.Printf("Got plan: %+v\n", np)
 
@@ -75,27 +62,11 @@ func StartNotificationEngine() {
 
 }
 
-func StopNotification(w http.ResponseWriter, r *http.Request) {
-	var res NotifyPersonResponse
-
-	vars := mux.Vars(r)
-	id := vars["uuid"]
-
-	// Attempt to stop the notification by sending the UUID to the notification engine
-	stopChan <- id
-
-	// TO DO: make sure that this is a valid UUID and obtain
-	//        confirmation of deletion
-
-	res = NotifyPersonResponse{
-		Message: "Attempting to terminate notification",
-		UUID:    id,
-	}
-
-	json.NewEncoder(w).Encode(res)
-}
-
 func planHandler(np *NotificationPlan, sc <-chan bool) {
+
+	var timerChan <-chan time.Time
+	var tickerChan <-chan time.Time
+
 	log.Println("planHandler()")
 
 	uuid := np.ID.String()
@@ -127,40 +98,13 @@ func planHandler(np *NotificationPlan, sc <-chan bool) {
 				log.Println("[", uuid, "]", "Waiting", strconv.FormatFloat(s.NotifyEveryPeriod.Minutes(), 'f', 1, 64), "minutes]")
 			case <-sc:
 				log.Println("[", uuid, "]", "Manual stop received.  Exiting loops.")
+				NIP.Mu.Lock()
+				defer NIP.Mu.Unlock()
+				delete(NIP.Stoppers, uuid)
 				return
 			}
 		}
 
 		log.Println("Loop broken")
 	}
-}
-
-func NotifyPerson(w http.ResponseWriter, r *http.Request) {
-	var res NotifyPersonResponse
-
-	vars := mux.Vars(r)
-	username := vars["person"]
-
-	p, err := c.GetNotificationPlan(username)
-	if err != nil {
-		// res.Error = err.Error()
-		// errjson, _ := json.Marshal(res)
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
-	// Assign a UUID
-	uuid.SwitchFormat(uuid.CleanHyphen)
-	p.ID = uuid.NewV4()
-
-	planChan <- p
-
-	res = NotifyPersonResponse{
-		Message:  "Notification initiated",
-		UUID:     p.ID.String(),
-		Username: p.Username,
-	}
-
-	json.NewEncoder(w).Encode(res)
-
 }
