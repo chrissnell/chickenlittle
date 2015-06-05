@@ -6,8 +6,9 @@ type Config struct {
 }
 
 type ServiceConfig struct {
-	ListenAddr string `yaml:"listen_address"`
-	DBFile     string `yaml:"db_file"`
+	APIListenAddr      string `yaml:"api_listen_address"`
+	CallbackListenAddr string `yaml:"callback_listen_address"`
+	DBFile             string `yaml:"db_file"`
 }
 
 type Integrations struct {

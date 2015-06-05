@@ -41,40 +41,50 @@ func main() {
 	stopChan = make(chan string)
 	go StartNotificationEngine()
 
-	router := mux.NewRouter().StrictSlash(true)
+	apiRouter := mux.NewRouter().StrictSlash(true)
 
-	router.HandleFunc("/people", ListPeople).
+	apiRouter.HandleFunc("/people", ListPeople).
 		Methods("GET")
 
-	router.HandleFunc("/people", CreatePerson).
+	apiRouter.HandleFunc("/people", CreatePerson).
 		Methods("POST")
 
-	router.HandleFunc("/people/{person}", ShowPerson).
+	apiRouter.HandleFunc("/people/{person}", ShowPerson).
 		Methods("GET")
 
-	router.HandleFunc("/people/{person}", DeletePerson).
+	apiRouter.HandleFunc("/people/{person}", DeletePerson).
 		Methods("DELETE")
 
-	router.HandleFunc("/people/{person}", UpdatePerson).
+	apiRouter.HandleFunc("/people/{person}", UpdatePerson).
 		Methods("PUT")
 
-	router.HandleFunc("/plan/{person}", CreateNotificationPlan).
+	apiRouter.HandleFunc("/plan/{person}", CreateNotificationPlan).
 		Methods("POST")
 
-	router.HandleFunc("/plan/{person}", ShowNotificationPlan).
+	apiRouter.HandleFunc("/plan/{person}", ShowNotificationPlan).
 		Methods("GET")
 
-	router.HandleFunc("/plan/{person}", DeleteNotificationPlan).
+	apiRouter.HandleFunc("/plan/{person}", DeleteNotificationPlan).
 		Methods("DELETE")
 
-	router.HandleFunc("/plan/{person}", UpdateNotificationPlan).
+	apiRouter.HandleFunc("/plan/{person}", UpdateNotificationPlan).
 		Methods("PUT")
 
-	router.HandleFunc("/people/{person}/notify", NotifyPerson).
+	apiRouter.HandleFunc("/people/{person}/notify", NotifyPerson).
 		Methods("POST")
 
-	router.HandleFunc("/notifications/{uuid}", StopNotification).
+	apiRouter.HandleFunc("/notifications/{uuid}", StopNotification).
 		Methods("DELETE")
 
-	log.Fatal(http.ListenAndServe(c.Config.Service.ListenAddr, router))
+	go func() {
+		log.Fatal(http.ListenAndServe(c.Config.Service.APIListenAddr, apiRouter))
+	}()
+
+	callbackRouter := mux.NewRouter().StrictSlash(true)
+
+	callbackRouter.HandleFunc("/{uuid}", ReceiveCallback).
+		Methods("POST")
+
+	log.Fatal(http.ListenAndServe(c.Config.Service.CallbackListenAddr, callbackRouter))
+
 }

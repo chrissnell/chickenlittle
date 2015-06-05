@@ -51,6 +51,16 @@ func StopNotification(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["uuid"]
 
+	if _, exists := NIP.Stoppers[id]; !exists {
+		res = NotifyPersonResponse{
+			Error: "No active notifications for this UUID",
+			UUID:  id,
+		}
+		errjson, _ := json.Marshal(res)
+		http.Error(w, string(errjson), http.StatusNotFound)
+		return
+	}
+
 	// Attempt to stop the notification by sending the UUID to the notification engine
 	stopChan <- id
 

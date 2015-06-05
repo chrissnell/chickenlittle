@@ -1,5 +1,6 @@
 service:
-  listen_address: :7072
+  api_listen_address: :7072
+  callback_listen_address: :7073
   db_file: ./chickenlittle.db
 integrations:
   hipchat:
