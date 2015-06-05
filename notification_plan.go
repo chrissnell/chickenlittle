@@ -4,27 +4,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/twinj/uuid"
 )
 
 type (
 	Method uint8
 )
 
-const (
-	Voice Method = iota
-	SMS
-	Email
-	Callback
-)
-
 type NotificationStep struct {
-	Method            Method        `json:"method"`
-	Data              string        `json:"data"`
+	Method            string        `json:"method"`
 	NotifyEveryPeriod time.Duration `json:"notify_every_period"`
 	NotifyUntilPeriod time.Duration `json:"notify_until_period"`
 }
 
 type NotificationPlan struct {
+	ID       uuid.UUID
 	Username string             `json:"username"`
 	Steps    []NotificationStep `json:"steps,omitempty"`
 }

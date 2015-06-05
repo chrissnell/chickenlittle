@@ -37,6 +37,7 @@ func main() {
 	c.DB.Open(c.Config.Service.DBFile)
 	defer c.DB.Close()
 
+	stopChan = make(chan string)
 	go StartNotificationEngine()
 
 	router := mux.NewRouter().StrictSlash(true)
@@ -70,6 +71,9 @@ func main() {
 
 	router.HandleFunc("/people/{person}/notify", NotifyPerson).
 		Methods("POST")
+
+	router.HandleFunc("/notifications/{uuid}", StopNotification).
+		Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(c.Config.Service.ListenAddr, router))
 }
