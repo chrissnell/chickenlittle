@@ -14,6 +14,7 @@ var (
 
 type NotificationsInProgress struct {
 	Stoppers map[string]chan bool
+	Messages map[string]string
 	Mu       sync.Mutex
 }
 
@@ -21,6 +22,9 @@ func StartNotificationEngine() {
 	// Initialize our map of Stopper channels
 	// UUID -> channel
 	NIP.Stoppers = make(map[string]chan bool)
+
+	// Initialize our map of Messages
+	NIP.Messages = make(map[string]string)
 
 	log.Println("StartNotificationEngine()")
 
@@ -41,6 +45,9 @@ func StartNotificationEngine() {
 
 			// Create a new Stopper channel for this plan
 			NIP.Stoppers[id] = make(chan bool)
+
+			// Save the message to NIP.Message
+			NIP.Messages[id] = nr.Content
 
 			// Launch a goroutine to handle plan processing
 			go notificationHandler(nr, NIP.Stoppers[id])
@@ -116,6 +123,7 @@ func notificationHandler(nr *NotificationRequest, sc <-chan bool) {
 				NIP.Mu.Lock()
 				defer NIP.Mu.Unlock()
 				delete(NIP.Stoppers, uuid)
+				delete(NIP.Messages, uuid)
 				return
 			}
 		}
