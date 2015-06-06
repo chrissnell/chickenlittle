@@ -82,7 +82,10 @@ func main() {
 
 	callbackRouter := mux.NewRouter().StrictSlash(true)
 
-	callbackRouter.HandleFunc("/{uuid}", ReceiveCallback).
+	callbackRouter.HandleFunc("/{uuid}/twiml", GenerateTwiML).
+		Methods("POST")
+
+	callbackRouter.HandleFunc("/{uuid}/callback", ReceiveCallback).
 		Methods("POST")
 
 	log.Fatal(http.ListenAndServe(c.Config.Service.CallbackListenAddr, callbackRouter))
