@@ -30,6 +30,8 @@ func NotifyPerson(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["person"]
 
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*20))
 	// If something went wrong, return an error in the JSON response
 	if err != nil {
@@ -77,6 +79,8 @@ func StopNotification(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	id := vars["uuid"]
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	if _, exists := NIP.Stoppers[id]; !exists {
 		res = NotifyPersonResponse{
