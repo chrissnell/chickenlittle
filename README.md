@@ -1,5 +1,5 @@
 # chickenlittle
-A RESTful service to get ahold of people, quickly.
+**A RESTful service to get ahold of people, quickly.**  Uses phone calls, SMS, and e-mail to send short messages to people registered with the service.  Allows for per-user configurable contact plans (e.g., "Send me an SMS.  If I don't reply within five minutes, call me on the phone.  If I don't answer, keep calling back every ten minutes until I do.").   Uses Twilio and Mailgun to handle the contacting.
 
 # Notice
 This is not ready for public consumption.  Sorry.
@@ -195,7 +195,7 @@ HTTP/1.1 200 OK
 
 **Request**
 ```
-POST /plan/lancelot
+POST /plan/USERNAME
 
 [
     {
@@ -232,7 +232,7 @@ HTTP/1.1 200 OK
 
 **Note:** The API does not support atomic updates of notification plans.  You need to post the entire plan even if you're just updating part of it.
 ```
-PUT /plan/lancelot
+PUT /plan/USERNAME
 
 [
     {
