@@ -1,6 +1,7 @@
 service:
   api_listen_address: :7072
   callback_listen_address: :7073
+  callback_url_base: http://3c0436fa.ngrok.io
   db_file: ./chickenlittle.db
 integrations:
   hipchat:

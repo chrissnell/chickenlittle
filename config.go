@@ -8,6 +8,7 @@ type Config struct {
 type ServiceConfig struct {
 	APIListenAddr      string `yaml:"api_listen_address"`
 	CallbackListenAddr string `yaml:"callback_listen_address"`
+	CallbackURLBase    string `yaml:"callback_url_base"`
 	DBFile             string `yaml:"db_file"`
 }
 

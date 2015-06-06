@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"bitbucket.org/ckvist/twilio/twiml"
@@ -31,6 +32,10 @@ func ReceiveCallback(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func ReceiveDigits(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func GenerateTwiML(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
@@ -48,7 +53,7 @@ func GenerateTwiML(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gather := twiml.Gather{
-		Action:    "http://me/uuid/digits",
+		Action:    fmt.Sprint(c.Config.Service.CallbackURLBase, "/", uuid, "/digits"),
 		Timeout:   15,
 		NumDigits: 1,
 	}

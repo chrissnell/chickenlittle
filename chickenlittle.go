@@ -88,6 +88,9 @@ func main() {
 	callbackRouter.HandleFunc("/{uuid}/callback", ReceiveCallback).
 		Methods("POST")
 
+	callbackRouter.HandleFunc("/{uuid}/digits", ReceiveDigits).
+		Methods("POST")
+
 	log.Fatal(http.ListenAndServe(c.Config.Service.CallbackListenAddr, callbackRouter))
 
 }
