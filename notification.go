@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -28,13 +29,13 @@ func StartNotificationEngine() {
 		select {
 		// IMPROVEMENT: We could implement a close() of planChan to indicate that the service is shutting down
 		//              and instruct all notifications to cease
-		case np := <-planChan:
+		case nr := <-planChan:
 
 			// We've received a new notification plan
-			log.Printf("Got plan: %+v\n", np)
+			log.Printf("Got plan: %+v\n", nr)
 
 			// Get the plan's UUID
-			id := np.ID.String()
+			id := nr.Plan.ID.String()
 
 			NIP.Mu.Lock()
 
@@ -42,7 +43,7 @@ func StartNotificationEngine() {
 			NIP.Stoppers[id] = make(chan bool)
 
 			// Launch a goroutine to handle plan processing
-			go planHandler(np, NIP.Stoppers[id])
+			go notificationHandler(nr, NIP.Stoppers[id])
 
 			NIP.Mu.Unlock()
 		case stopUUID := <-stopChan:
@@ -62,21 +63,35 @@ func StartNotificationEngine() {
 
 }
 
-func planHandler(np *NotificationPlan, sc <-chan bool) {
+func notificationHandler(nr *NotificationRequest, sc <-chan bool) {
 
 	var timerChan <-chan time.Time
 	var tickerChan <-chan time.Time
 
-	log.Println("planHandler()")
+	log.Println("notificationHandler()")
 
-	uuid := np.ID.String()
+	uuid := nr.Plan.ID.String()
 
-	for n, s := range np.Steps {
+	for n, s := range nr.Plan.Steps {
+
+		u, err := url.Parse(s.Method)
+		if err != nil {
+			log.Println("Error parsing URI:", err)
+			log.Println("Advancing to next step in plan.")
+			continue
+		}
 
 		log.Println("[", uuid, "]", "STEP", n)
 		log.Println("[", uuid, "]", "Method:", s.Method)
 
-		if n == len(np.Steps)-1 {
+		switch u.Scheme {
+		case "phone":
+			makePhoneCall(s.Method, nr.Content)
+		case "sms":
+			sendSMS(s.Method, nr.Content)
+		}
+
+		if n == len(nr.Plan.Steps)-1 {
 			// Last step, so we use a Ticker and NotifyEveryPeriod
 			tickerChan = time.NewTicker(s.NotifyEveryPeriod).C
 			log.Println("[", uuid, "]", "[Waiting", strconv.FormatFloat(s.NotifyEveryPeriod.Minutes(), 'f', 1, 64), "minutes]")
@@ -107,4 +122,12 @@ func planHandler(np *NotificationPlan, sc <-chan bool) {
 
 		log.Println("Loop broken")
 	}
+}
+
+func makePhoneCall(uri, message string) {
+	log.Println("Calling", uri, "with message:", message)
+}
+
+func sendSMS(uri, message string) {
+	log.Println("Sending SMS to", uri, "with message:", message)
 }

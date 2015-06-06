@@ -13,7 +13,7 @@ import (
 var (
 	c        ChickenLittle
 	NIP      NotificationsInProgress
-	planChan = make(chan *NotificationPlan)
+	planChan = make(chan *NotificationRequest)
 )
 
 type ChickenLittle struct {

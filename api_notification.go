@@ -2,26 +2,52 @@ package main
 
 import (
 	"encoding/json"
+	"io"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/twinj/uuid"
 )
 
+type NotificationRequest struct {
+	Content string            `json:"content"`
+	Plan    *NotificationPlan `json:"-"`
+}
+
 type NotifyPersonResponse struct {
 	Username string `json:"username"`
 	UUID     string `json:"uuid"`
+	Content  string `json:"content"`
 	Message  string `json:"message"`
 	Error    string `json:"error"`
 }
 
 func NotifyPerson(w http.ResponseWriter, r *http.Request) {
 	var res NotifyPersonResponse
+	var req NotificationRequest
 
 	vars := mux.Vars(r)
 	username := vars["person"]
 
-	p, err := c.GetNotificationPlan(username)
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*20))
+	// If something went wrong, return an error in the JSON response
+	if err != nil {
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	err = r.Body.Close()
+	if err != nil {
+		res.Error = err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	err = json.Unmarshal(body, &req)
+
+	req.Plan, err = c.GetNotificationPlan(username)
 	if err != nil {
 		// res.Error = err.Error()
 		// errjson, _ := json.Marshal(res)
@@ -31,14 +57,15 @@ func NotifyPerson(w http.ResponseWriter, r *http.Request) {
 
 	// Assign a UUID
 	uuid.SwitchFormat(uuid.CleanHyphen)
-	p.ID = uuid.NewV4()
+	req.Plan.ID = uuid.NewV4()
 
-	planChan <- p
+	planChan <- &req
 
 	res = NotifyPersonResponse{
 		Message:  "Notification initiated",
-		UUID:     p.ID.String(),
-		Username: p.Username,
+		Content:  req.Content,
+		UUID:     req.Plan.ID.String(),
+		Username: req.Plan.Username,
 	}
 
 	json.NewEncoder(w).Encode(res)
