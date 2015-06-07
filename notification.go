@@ -95,7 +95,7 @@ func notificationHandler(nr *NotificationRequest, sc <-chan bool) {
 		case "phone":
 			MakePhoneCall(u.Host, nr.Content, uuid)
 		case "sms":
-			sendSMS(s.Method, nr.Content)
+			SendSMS(u.Host, nr.Content, uuid)
 		}
 
 		if n == len(nr.Plan.Steps)-1 {
@@ -130,8 +130,4 @@ func notificationHandler(nr *NotificationRequest, sc <-chan bool) {
 
 		log.Println("Loop broken")
 	}
-}
-
-func sendSMS(uri, message string) {
-	log.Println("Sending SMS to", uri, "with message:", message)
 }

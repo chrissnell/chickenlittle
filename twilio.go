@@ -20,6 +20,41 @@ type CallbackResponse struct {
 	Error   string `json:"error"`
 }
 
+func SendSMS(phoneNumber, message, uuid string) {
+	var cr map[string]interface{}
+
+	log.Println("Sending SMS to", phoneNumber, "with message:", message)
+
+	u := url.Values{}
+	u.Set("From", c.Config.Integrations.Twilio.CallFromNumber)
+	u.Set("To", phoneNumber)
+	u.Set("Body", message)
+	u.Set("StatusCallback", fmt.Sprint(c.Config.Service.CallbackURLBase, "/", uuid, "/callback"))
+	body := *strings.NewReader(u.Encode())
+
+	client := &http.Client{}
+	req, _ := http.NewRequest("POST", fmt.Sprint(c.Config.Integrations.Twilio.APIBaseURL, c.Config.Integrations.Twilio.AccountSID, "/Messages.json"), &body)
+	req.SetBasicAuth(c.Config.Integrations.Twilio.AccountSID, c.Config.Integrations.Twilio.AuthToken)
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("SendSMS() Request error:", err)
+	}
+
+	b, err := ioutil.ReadAll(io.LimitReader(resp.Body, 1024*20))
+	resp.Body.Close()
+
+	err = json.Unmarshal(b, &cr)
+	if err != nil {
+		log.Fatalln("SendSMS() Error unmarshalling JSON:", err)
+	}
+
+	log.Printf("SMS Response Received:\n%+v\n", cr)
+
+}
+
 func MakePhoneCall(phoneNumber, message, uuid string) {
 	var cr map[string]interface{}
 
