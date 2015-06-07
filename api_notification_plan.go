@@ -224,5 +224,4 @@ func UpdateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 	res.Message = fmt.Sprint("Notification plan for user ", username, " updated")
 
 	json.NewEncoder(w).Encode(res)
-
 }

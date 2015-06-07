@@ -15,6 +15,14 @@ type ServiceConfig struct {
 type Integrations struct {
 	HipChat   HipChat   `yaml:"hipchat"`
 	VictorOps VictorOps `yaml:"victorops"`
+	Twilio    Twilio    `yaml:"twilio"`
+}
+
+type Twilio struct {
+	AccountSID     string `yaml:"account_sid"`
+	AuthToken      string `yaml:"auth_token"`
+	CallFromNumber string `yaml:"call_from_number"`
+	APIBaseURL     string `yaml:"api_base_url"`
 }
 
 type VictorOps struct {

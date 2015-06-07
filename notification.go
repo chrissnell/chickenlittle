@@ -93,7 +93,7 @@ func notificationHandler(nr *NotificationRequest, sc <-chan bool) {
 
 		switch u.Scheme {
 		case "phone":
-			makePhoneCall(s.Method, nr.Content)
+			MakePhoneCall(u.Host, nr.Content, uuid)
 		case "sms":
 			sendSMS(s.Method, nr.Content)
 		}
@@ -130,10 +130,6 @@ func notificationHandler(nr *NotificationRequest, sc <-chan bool) {
 
 		log.Println("Loop broken")
 	}
-}
-
-func makePhoneCall(uri, message string) {
-	log.Println("Calling", uri, "with message:", message)
 }
 
 func sendSMS(uri, message string) {
