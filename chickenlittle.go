@@ -91,6 +91,9 @@ func main() {
 	callbackRouter.HandleFunc("/{uuid}/digits", ReceiveDigits).
 		Methods("POST")
 
+	callbackRouter.HandleFunc("/sms", ReceiveSMSReply).
+		Methods("POST")
+
 	log.Fatal(http.ListenAndServe(c.Config.Service.CallbackListenAddr, callbackRouter))
 
 }

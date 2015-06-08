@@ -13,9 +13,10 @@ var (
 )
 
 type NotificationsInProgress struct {
-	Stoppers map[string]chan bool
-	Messages map[string]string
-	Mu       sync.Mutex
+	Stoppers      map[string]chan bool
+	Messages      map[string]string
+	Conversations map[string]string
+	Mu            sync.Mutex
 }
 
 func StartNotificationEngine() {
@@ -25,6 +26,9 @@ func StartNotificationEngine() {
 
 	// Initialize our map of Messages
 	NIP.Messages = make(map[string]string)
+
+	// Initialize our map of Conversations
+	NIP.Conversations = make(map[string]string)
 
 	log.Println("StartNotificationEngine()")
 
@@ -60,6 +64,9 @@ func StartNotificationEngine() {
 			// Check to see if the requested UUID is actually in progress
 			_, prs := NIP.Stoppers[stopUUID]
 			if prs {
+
+				log.Println("[", stopUUID, "]", "Sending a stop notification to the plan processor")
+
 				// It's in progress, so we'll send a message on its Stopper to
 				// be received by the goroutine executing the plan
 				NIP.Stoppers[stopUUID] <- true
@@ -75,9 +82,8 @@ func notificationHandler(nr *NotificationRequest, sc <-chan bool) {
 	var timerChan <-chan time.Time
 	var tickerChan <-chan time.Time
 
-	log.Println("notificationHandler()")
-
 	uuid := nr.Plan.ID.String()
+	log.Println("[", uuid, "]", "Initiating notification plan")
 
 	for n, s := range nr.Plan.Steps {
 
@@ -88,14 +94,13 @@ func notificationHandler(nr *NotificationRequest, sc <-chan bool) {
 			continue
 		}
 
-		log.Println("[", uuid, "]", "STEP", n)
 		log.Println("[", uuid, "]", "Method:", s.Method)
 
 		switch u.Scheme {
 		case "phone":
 			MakePhoneCall(u.Host, nr.Content, uuid)
 		case "sms":
-			SendSMS(u.Host, nr.Content, uuid)
+			SendSMS(u.Host, nr.Content, uuid, false)
 		}
 
 		if n == len(nr.Plan.Steps)-1 {
@@ -119,7 +124,7 @@ func notificationHandler(nr *NotificationRequest, sc <-chan bool) {
 				log.Println("[", uuid, "]", "**Tick**  Retry contact method!")
 				log.Println("[", uuid, "]", "Waiting", strconv.FormatFloat(s.NotifyEveryPeriod.Minutes(), 'f', 1, 64), "minutes]")
 			case <-sc:
-				log.Println("[", uuid, "]", "Manual stop received.  Exiting loops.")
+				log.Println("[", uuid, "]", "Stop request received.  Terminating notifications.")
 				NIP.Mu.Lock()
 				defer NIP.Mu.Unlock()
 				delete(NIP.Stoppers, uuid)
