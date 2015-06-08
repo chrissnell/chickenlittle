@@ -103,16 +103,16 @@ func SendSMS(phoneNumber, message, uuid string, dontSendAckRequest bool) {
 func MakePhoneCall(phoneNumber, message, uuid string) {
 	var cr map[string]interface{}
 
-	log.Println("Calling", phoneNumber, "with message:", message)
+	log.Println("[", uuid, "] Calling", phoneNumber, "with message:", message)
 
 	u := url.Values{}
 	u.Set("From", c.Config.Integrations.Twilio.CallFromNumber)
 	u.Set("To", phoneNumber)
-	u.Set("Url", fmt.Sprint(c.Config.Service.CallbackURLBase, "/", uuid, "/twiml"))
-	u.Set("StatusCallback", fmt.Sprint(c.Config.Service.CallbackURLBase, "/", uuid, "/callback"))
-	u.Add("StatusCallbackEvent", "ringing")
-	u.Add("StatusCallbackEvent", "answered")
-	u.Add("StatusCallbackEvent", "completed")
+	u.Set("Url", fmt.Sprint(c.Config.Service.CallbackURLBase, "/", uuid, "/twiml/notify"))
+	// u.Set("StatusCallback", fmt.Sprint(c.Config.Service.CallbackURLBase, "/", uuid, "/callback"))
+	// u.Add("StatusCallbackEvent", "ringing")
+	// u.Add("StatusCallbackEvent", "answered")
+	// u.Add("StatusCallbackEvent", "completed")
 	u.Set("IfMachine", "Hangup")
 	u.Set("Timeout", "20")
 	body := *strings.NewReader(u.Encode())
@@ -135,8 +135,6 @@ func MakePhoneCall(phoneNumber, message, uuid string) {
 	if err != nil {
 		log.Fatalln("MakePhoneCall() Error unmarshalling JSON:", err)
 	}
-
-	log.Printf("Call Response Received:\n%+v\n", cr)
 
 }
 
@@ -167,6 +165,9 @@ func ReceiveSMSReply(w http.ResponseWriter, r *http.Request) {
 			NIP.Mu.Unlock()
 			return
 		}
+
+		// Delete the conversation key from the in-progress store
+		delete(NIP.Conversations, conversationKey)
 
 		// Unlock our mutex so the notification engine can take it
 		NIP.Mu.Unlock()
@@ -213,16 +214,37 @@ func ReceiveDigits(w http.ResponseWriter, r *http.Request) {
 		log.Println("ReceiveDigits() r.ParseForm() error:", err)
 	}
 
+	// Fetch some form values we'll need from Twilio's request
 	digits := r.FormValue("Digits")
+	callSid := r.FormValue("CallSid")
 
-	log.Println("Digits received:", digits)
-
+	// If digits has been set, user has answered the phone and pressed (any) key to acknowledge the message
 	if digits != "" {
 
 		if _, exists := NIP.Stoppers[uuid]; !exists {
 			log.Println("ReceiveDigits(): No active notifications for this UUID:", uuid)
 			http.Error(w, "", http.StatusNotFound)
 			return
+		}
+
+		// We matched a valid notification-in-progress and the user pressed digits when prompted
+		// so we'll do a POST to Twilio that points the call at a TwiML routine that confirms
+		// their acknowledgement and sends them on their way.
+		u := url.Values{}
+		u.Set("Url", fmt.Sprint(c.Config.Service.CallbackURLBase, "/", uuid, "/twiml/acknowledged"))
+
+		body := *strings.NewReader(u.Encode())
+
+		client := &http.Client{}
+		req, _ := http.NewRequest("POST", fmt.Sprint(c.Config.Integrations.Twilio.APIBaseURL, c.Config.Integrations.Twilio.AccountSID, "/Calls/", callSid), &body)
+		req.SetBasicAuth(c.Config.Integrations.Twilio.AccountSID, c.Config.Integrations.Twilio.AuthToken)
+		req.Header.Add("Accept", "application/json")
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+		// Send the POST request
+		_, err := client.Do(req)
+		if err != nil {
+			log.Println("ReceiveDigits() TwiML POST Request error:", err)
 		}
 
 		// Attempt to stop the notification by sending the UUID to the notification engine
@@ -233,37 +255,50 @@ func ReceiveDigits(w http.ResponseWriter, r *http.Request) {
 func GenerateTwiML(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
-
-	if _, exists := NIP.Stoppers[uuid]; !exists {
-		http.Error(w, "No active notifications for this UUID", http.StatusNotFound)
-		return
-	}
+	action := vars["action"]
 
 	resp := twiml.NewResponse()
 
-	intro := twiml.Say{
-		Voice: "woman",
-		Text:  "This is Chicken Little with a message for you.",
+	switch action {
+	case "notify":
+		// This is a request for a TwiML script for a standard message notification
+		if _, exists := NIP.Stoppers[uuid]; !exists {
+			http.Error(w, "No active notifications for this UUID", http.StatusNotFound)
+			return
+		}
+
+		intro := twiml.Say{
+			Voice: "woman",
+			Text:  "This is Chicken Little with a message for you.",
+		}
+
+		gather := twiml.Gather{
+			Action:    fmt.Sprint(c.Config.Service.CallbackURLBase, "/", uuid, "/digits"),
+			Timeout:   15,
+			NumDigits: 1,
+		}
+
+		theMessage := twiml.Say{
+			Voice: "man",
+			Text:  NIP.Messages[uuid],
+		}
+
+		pressAny := twiml.Say{
+			Voice: "woman",
+			Text:  "Press any key to acknowledge receipt of this message",
+		}
+
+		resp.Action(intro)
+		resp.Gather(gather, theMessage, pressAny)
+
+	case "acknowledged":
+		// This is a request for the end-of-call wrap-up message
+		resp.Action(twiml.Say{
+			Voice: "woman",
+			Text:  "Thank you. This message has been acknowledged. Goodbye!",
+		})
 	}
 
-	gather := twiml.Gather{
-		Action:    fmt.Sprint(c.Config.Service.CallbackURLBase, "/", uuid, "/digits"),
-		Timeout:   15,
-		NumDigits: 1,
-	}
-
-	theMessage := twiml.Say{
-		Voice: "man",
-		Text:  NIP.Messages[uuid],
-	}
-
-	pressAny := twiml.Say{
-		Voice: "woman",
-		Text:  "Press any key to acknowledge receipt of this message",
-	}
-
-	resp.Action(intro)
-	resp.Gather(gather, theMessage, pressAny)
 	resp.Send(w)
 }
 

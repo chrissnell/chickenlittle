@@ -82,7 +82,7 @@ func main() {
 
 	callbackRouter := mux.NewRouter().StrictSlash(true)
 
-	callbackRouter.HandleFunc("/{uuid}/twiml", GenerateTwiML).
+	callbackRouter.HandleFunc("/{uuid}/twiml/{action}", GenerateTwiML).
 		Methods("POST")
 
 	callbackRouter.HandleFunc("/{uuid}/callback", ReceiveCallback).

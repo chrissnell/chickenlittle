@@ -38,9 +38,7 @@ func StartNotificationEngine() {
 		// IMPROVEMENT: We could implement a close() of planChan to indicate that the service is shutting down
 		//              and instruct all notifications to cease
 		case nr := <-planChan:
-
 			// We've received a new notification plan
-			log.Printf("Got plan: %+v\n", nr)
 
 			// Get the plan's UUID
 			id := nr.Plan.ID.String()
@@ -106,12 +104,12 @@ func notificationHandler(nr *NotificationRequest, sc <-chan bool) {
 		if n == len(nr.Plan.Steps)-1 {
 			// Last step, so we use a Ticker and NotifyEveryPeriod
 			tickerChan = time.NewTicker(s.NotifyEveryPeriod).C
-			log.Println("[", uuid, "]", "[Waiting", strconv.FormatFloat(s.NotifyEveryPeriod.Minutes(), 'f', 1, 64), "minutes]")
+			log.Println("[", uuid, "]", "Scheduling the next retry in", strconv.FormatFloat(s.NotifyEveryPeriod.Minutes(), 'f', 1, 64), "minutes")
 
 		} else {
 			// Not the last step, so we use a Timer and NotifyUntilPeriod
 			timerChan = time.NewTimer(s.NotifyUntilPeriod).C
-			log.Println("[", uuid, "]", "[Waiting", strconv.FormatFloat(s.NotifyUntilPeriod.Minutes(), 'f', 1, 64), "minutes]")
+			log.Println("[", uuid, "]", "Scheduling the next notification step in", strconv.FormatFloat(s.NotifyUntilPeriod.Minutes(), 'f', 1, 64), "minutes")
 		}
 
 	timerLoop:
