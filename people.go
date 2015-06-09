@@ -21,6 +21,7 @@ func (p *Person) Unmarshal(jp string) error {
 	return err
 }
 
+// Fetch a Person from the DB
 func (c *ChickenLittle) GetPerson(p string) (*Person, error) {
 	jp, err := c.DB.Fetch("people", p)
 	if err != nil {
@@ -37,6 +38,7 @@ func (c *ChickenLittle) GetPerson(p string) (*Person, error) {
 	return peep, nil
 }
 
+// Fetch every Person from the DB
 func (c *ChickenLittle) GetAllPeople() ([]*Person, error) {
 	var peeps []*Person
 
@@ -59,6 +61,7 @@ func (c *ChickenLittle) GetAllPeople() ([]*Person, error) {
 	return peeps, nil
 }
 
+// Store a Person in the DB
 func (c *ChickenLittle) StorePerson(p *Person) error {
 	jp, err := p.Marshal()
 	if err != nil {
@@ -73,6 +76,7 @@ func (c *ChickenLittle) StorePerson(p *Person) error {
 	return nil
 }
 
+// Delete a Person from the DB
 func (c *ChickenLittle) DeletePerson(p string) error {
 	err := c.DB.Delete("people", p)
 	if err != nil {

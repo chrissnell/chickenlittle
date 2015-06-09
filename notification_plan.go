@@ -34,6 +34,7 @@ func (np *NotificationPlan) Unmarshal(jnp string) error {
 	return err
 }
 
+// Fetch a NotificationPlan from the DB
 func (c *ChickenLittle) GetNotificationPlan(username string) (*NotificationPlan, error) {
 	jp, err := c.DB.Fetch("notificationplans", username)
 	if err != nil {
@@ -50,6 +51,7 @@ func (c *ChickenLittle) GetNotificationPlan(username string) (*NotificationPlan,
 	return plan, nil
 }
 
+// Store a NotificationPlan in the DB
 func (c *ChickenLittle) StoreNotificationPlan(p *NotificationPlan) error {
 	jp, err := p.Marshal()
 	if err != nil {
@@ -64,6 +66,7 @@ func (c *ChickenLittle) StoreNotificationPlan(p *NotificationPlan) error {
 	return nil
 }
 
+// Delete a NotificationPlan from the DB
 func (c *ChickenLittle) DeleteNotificationPlan(username string) error {
 	err := c.DB.Delete("notificationplans", username)
 	if err != nil {

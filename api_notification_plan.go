@@ -17,6 +17,7 @@ type NotificationPlanResponse struct {
 	Error            string           `json:"error"`
 }
 
+// Return a JSON-formatted NotificationPlan for a Person
 func ShowNotificationPlan(w http.ResponseWriter, r *http.Request) {
 	var res NotificationPlanResponse
 
@@ -38,6 +39,7 @@ func ShowNotificationPlan(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
+// Delete a Person's NotificationPlan
 func DeleteNotificationPlan(w http.ResponseWriter, r *http.Request) {
 	var res NotificationPlanResponse
 
@@ -56,6 +58,7 @@ func DeleteNotificationPlan(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
+// Create a NotificationPlan for a Person
 func CreateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 	var res NotificationPlanResponse
 	var p []NotificationStep
@@ -110,6 +113,7 @@ func CreateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 		log.Println("GetPerson() failed:", err)
 	}
 
+	// The NotificationPlan provided must have at least one NotificationStep
 	if len(p) == 0 {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
@@ -147,6 +151,7 @@ func CreateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
+// Updates a NotificationPlan for a Person
 func UpdateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 	var res NotificationPlanResponse
 	var p []NotificationStep
@@ -198,6 +203,15 @@ func UpdateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 		log.Println("GetPerson() failed:", err)
 	}
 
+	// The NotificationPlan provided must have at least one NotificationStep
+	if len(p) == 0 {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = "Must provide at least one notification step in JSON"
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
 	np, err := c.GetNotificationPlan(username)
 	if (np != nil && np.Username == "") || err != nil {
 		w.WriteHeader(422) // unprocessable entity
@@ -209,6 +223,7 @@ func UpdateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 		log.Println("GetNotificationPlan() failed for", username)
 	}
 
+	// Replace the NotificationSteps of the fetched plan with those from this request
 	np.Steps = p
 
 	err = c.StoreNotificationPlan(np)
