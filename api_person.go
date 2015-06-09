@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/chrissnell/victorops-go"
 	"github.com/gorilla/mux"
