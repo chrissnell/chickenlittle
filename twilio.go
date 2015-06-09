@@ -9,7 +9,6 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 
 	"bitbucket.org/ckvist/twilio/twiml"
@@ -300,16 +299,4 @@ func GenerateTwiML(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp.Send(w)
-}
-
-func UUIDToAppID(u string) string {
-	return strings.Replace(u, "-", "", -1)
-}
-
-func AppIDToUUID(a string) (string, error) {
-	ur := regexp.MustCompile(`([a-f0-9]{8})([a-f0-9]{4})([a-f0-9]{4})([a-f0-9]{4})([a-f0-9]{12})$`)
-	if matches := ur.FindStringSubmatch(a); len(matches) == 6 {
-		return fmt.Sprintf("%v-%v-%v-%v-%v\n", matches[1], matches[2], matches[3], matches[4], matches[5]), nil
-	}
-	return "", fmt.Errorf("AppIDToUUID(): Could not parse UUID", a)
 }
