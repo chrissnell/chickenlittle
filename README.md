@@ -4,6 +4,7 @@
 # API
 - [People API](https://github.com/chrissnell/chickenlittle/blob/master/docs/PEOPLE_API.md) - used for adding and deleting people in the system.
 - [Notification Plan API](https://github.com/chrissnell/chickenlittle/blob/master/docs/NOTIFICATION_PLAN_API.md) - used to define how people are notified (contact methods, order, and timing)
+- [Notification API](https://github.com/chrissnell/chickenlittle/blob/master/docs/NOTIFICATION_API.md) - used to send notifications to a person using their notification plan
 
 # Quick Start
 1. You'll need [Go](http://golang.org/) installed to build the binary.
