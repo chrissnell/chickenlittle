@@ -25,6 +25,7 @@ type Notification struct {
 	Priority victorops.MessageType `json:"priority,omitempty"`
 }
 
+// Fetches every person from the DB and returns them as JSON
 func ListPeople(w http.ResponseWriter, r *http.Request) {
 	var res PeopleResponse
 
@@ -43,6 +44,7 @@ func ListPeople(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
+// Fetches a single person form the DB and returns them as JSON
 func ShowPerson(w http.ResponseWriter, r *http.Request) {
 	var res PeopleResponse
 
@@ -57,11 +59,12 @@ func ShowPerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res.People = append(res.People, *p.Sanitized())
+	res.People = append(res.People, *p)
 
 	json.NewEncoder(w).Encode(res)
 }
 
+// Deletes the specified person from the database
 func DeletePerson(w http.ResponseWriter, r *http.Request) {
 	var res PeopleResponse
 
@@ -79,10 +82,13 @@ func DeletePerson(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
+// Creates a new person in the database
 func CreatePerson(w http.ResponseWriter, r *http.Request) {
 	var res PeopleResponse
 	var p Person
 
+	// We're getting the details of this new person from the POSTed JSON
+	// so we first need to read in the body of the POST
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*10))
 	// If something went wrong, return an error in the JSON response
 	if err != nil {
@@ -98,8 +104,8 @@ func CreatePerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Attempt to unmarshall the JSON into our Person struct
 	err = json.Unmarshal(body, &p)
-
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
@@ -108,6 +114,7 @@ func CreatePerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// If a username *and* fullname were not provided, return an error
 	if p.Username == "" || p.FullName == "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
@@ -116,6 +123,7 @@ func CreatePerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Make sure that this user doesn't already exist
 	fp, err := c.GetPerson(p.Username)
 	if fp != nil && fp.Username != "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -128,6 +136,7 @@ func CreatePerson(w http.ResponseWriter, r *http.Request) {
 		log.Println("GetPerson() failed:", err)
 	}
 
+	// Store our new person in the DB
 	err = c.StorePerson(&p)
 	if err != nil {
 		log.Println("Error storing person:", err)
@@ -143,6 +152,7 @@ func CreatePerson(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
+// Updates an existing person in the database
 func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 	var res PeopleResponse
 	var p Person
@@ -175,6 +185,7 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// The only field that can be updated currently is fullname, so make sure one was provided
 	if p.FullName == "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
@@ -183,6 +194,7 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Make sure the user actually exists before updating
 	fp, err := c.GetPerson(username)
 	if fp != nil && fp.Username == "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -198,6 +210,7 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 	// Now that we know our user exists in the DB, copy the username from the URI path and add it to our struct
 	p.Username = username
 
+	// Store the updated user in the DB
 	err = c.StorePerson(&p)
 	if err != nil {
 		log.Println("Error storing person:", err)
@@ -212,66 +225,5 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 	res.Message = fmt.Sprint("User ", username, " updated")
 
 	json.NewEncoder(w).Encode(res)
-
-}
-
-func NotifyPersonViaVictorops(w http.ResponseWriter, r *http.Request) {
-
-	var n Notification
-	var res PeopleResponse
-
-	vars := mux.Vars(r)
-	username := vars["person"]
-
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*10))
-	// If something went wrong, return an error in the JSON response
-	if err != nil {
-		res.Error = err.Error()
-		json.NewEncoder(w).Encode(res)
-		return
-	}
-
-	err = r.Body.Close()
-	if err != nil {
-		res.Error = err.Error()
-		json.NewEncoder(w).Encode(res)
-		return
-	}
-
-	err = json.Unmarshal(body, &n)
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		res.Error = err.Error()
-		json.NewEncoder(w).Encode(res)
-		return
-	}
-
-	vo := victorops.NewClient(c.Config.Integrations.VictorOps.APIKey)
-
-	p, err := c.GetPerson(username)
-	if err != nil {
-		res.Error = err.Error()
-		log.Println("config.GetPerson() Error:", err)
-		json.NewEncoder(w).Encode(res)
-		return
-	}
-
-	e := &victorops.Event{
-		RoutingKey:  p.VictorOpsRoutingKey,
-		MessageType: victorops.Critical,
-		EntityID:    n.Message,
-		Timestamp:   time.Now(),
-	}
-
-	resp, err := vo.SendAlert(e)
-	if err != nil {
-		res.Error = err.Error()
-		log.Println("Error:", err)
-		json.NewEncoder(w).Encode(res)
-		return
-	}
-	log.Println("VO Response - Result:", resp.Result, "EntityID:", resp.EntityID, "Message:", resp.EntityID)
-	return
 
 }

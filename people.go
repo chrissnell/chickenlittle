@@ -21,14 +21,6 @@ func (p *Person) Unmarshal(jp string) error {
 	return err
 }
 
-// Returns a santized Person struct without sensitive information
-func (p *Person) Sanitized() *Person {
-	var sp Person
-	sp.FullName = p.FullName
-	sp.Username = p.Username
-	return &sp
-}
-
 func (c *ChickenLittle) GetPerson(p string) (*Person, error) {
 	jp, err := c.DB.Fetch("people", p)
 	if err != nil {

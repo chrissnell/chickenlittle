@@ -6,6 +6,7 @@ import (
 	"log"
 )
 
+// Sends a multipart text and HTML e-mail with a link to the click endpoint for stopping the notification
 func SendEmail(address, message, uuid string) {
 
 	log.Println("[", uuid, "] Sending email to:", address)
