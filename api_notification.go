@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -104,4 +105,22 @@ func StopNotification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(res)
+}
+
+func StopNotificationClick(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	id := vars["uuid"]
+
+	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+
+	if _, exists := NIP.Stoppers[id]; !exists {
+		http.Error(w, fmt.Sprint("UUID not found."), http.StatusNotFound)
+		return
+	}
+
+	// Attempt to stop the notification by sending the UUID to the notification engine
+	stopChan <- id
+
+	fmt.Fprintln(w, "<html><body><b>Thank you!</b><br><br>Chicken Little has received your acknowledgement and you will no longer be notified with this message.</body></html>")
 }

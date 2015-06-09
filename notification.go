@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/url"
 	"strconv"
@@ -99,6 +100,8 @@ func notificationHandler(nr *NotificationRequest, sc <-chan bool) {
 			MakePhoneCall(u.Host, nr.Content, uuid)
 		case "sms":
 			SendSMS(u.Host, nr.Content, uuid, false)
+		case "email":
+			SendEmail(fmt.Sprint(u.User, "@", u.Host), nr.Content, uuid)
 		}
 
 		if n == len(nr.Plan.Steps)-1 {

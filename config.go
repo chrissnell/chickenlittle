@@ -7,6 +7,8 @@ type Config struct {
 
 type ServiceConfig struct {
 	APIListenAddr      string `yaml:"api_listen_address"`
+	ClickListenAddr    string `yaml:"click_listen_address"`
+	ClickURLBase       string `yaml:"click_url_base"`
 	CallbackListenAddr string `yaml:"callback_listen_address"`
 	CallbackURLBase    string `yaml:"callback_url_base"`
 	DBFile             string `yaml:"db_file"`
@@ -16,6 +18,7 @@ type Integrations struct {
 	HipChat   HipChat   `yaml:"hipchat"`
 	VictorOps VictorOps `yaml:"victorops"`
 	Twilio    Twilio    `yaml:"twilio"`
+	Mailgun   Mailgun   `yaml:"mailgun"`
 }
 
 type Twilio struct {
@@ -23,6 +26,11 @@ type Twilio struct {
 	AuthToken      string `yaml:"auth_token"`
 	CallFromNumber string `yaml:"call_from_number"`
 	APIBaseURL     string `yaml:"api_base_url"`
+}
+
+type Mailgun struct {
+	APIKey   string `yaml:"api_key"`
+	Hostname string `yaml:"hostname"`
 }
 
 type VictorOps struct {

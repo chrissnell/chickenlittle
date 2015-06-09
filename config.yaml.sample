@@ -1,14 +1,19 @@
 service:
   api_listen_address: :7072
+  click_listen_address: :7074
+  click_url_base: http://some.ngrok.io
   callback_listen_address: :7073
-  callback_url_base: http://123456.ngrok.io
+  callback_url_base: http://some-other.ngrok.io
   db_file: ./chickenlittle.db
 integrations:
   twilio:
-    account_sid: your-twilio-sid-goes-here
-    auth_token: your-twilio-auth-token-goes-here
+    account_sid: your-account-sid-goes-here
+    auth_token: your-auth-token-goes-here
     api_base_url: https://api.twilio.com/2010-04-01/Accounts/
-    call_from_number: your-outbound-callerid-phone-number-goes-here
+    call_from_number: your-twilio-phone-number-goes-here
+  mailgun:
+    api_key: your-mailgun-key-goes-here
+    hostname: yourhostname.mailgun.org
   hipchat:
     hipchat_auth_token: NotYetImplemented
     hipchat_announce_room:  NotYetImplemented

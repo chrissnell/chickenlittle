@@ -94,6 +94,15 @@ func main() {
 	callbackRouter.HandleFunc("/sms", ReceiveSMSReply).
 		Methods("POST")
 
-	log.Fatal(http.ListenAndServe(c.Config.Service.CallbackListenAddr, callbackRouter))
+	go func() {
+		log.Fatal(http.ListenAndServe(c.Config.Service.CallbackListenAddr, callbackRouter))
+	}()
+
+	clickRouter := mux.NewRouter().StrictSlash(true)
+
+	clickRouter.HandleFunc("/{uuid}/stop", StopNotificationClick).
+		Methods("GET")
+
+	log.Fatal(http.ListenAndServe(c.Config.Service.ClickListenAddr, clickRouter))
 
 }
