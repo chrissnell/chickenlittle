@@ -39,6 +39,8 @@ type SMSResponse struct {
 	Uri         string
 }
 
+// Sends an SMS text message to a phone number using the Twilio API,
+// optionally including a method for acknowledging receipt of the message.
 func SendSMS(phoneNumber, message, uuid string, dontSendAckRequest bool) {
 	var cr SMSResponse
 
@@ -51,9 +53,12 @@ func SendSMS(phoneNumber, message, uuid string, dontSendAckRequest bool) {
 	// Generate an int in the range 100 <= n <= 999
 	ackReply := rand.Intn(899) + 100
 
+	// Builds a form that will be posted to Twilio API
 	u := url.Values{}
 	u.Set("From", c.Config.Integrations.Twilio.CallFromNumber)
 	u.Set("To", phoneNumber)
+
+	// Sometimes we send texts that don't require ACKing.  This handles that.
 	if dontSendAckRequest {
 		u.Set("Body", message)
 	} else {
@@ -61,12 +66,13 @@ func SendSMS(phoneNumber, message, uuid string, dontSendAckRequest bool) {
 
 	}
 
+	// If we have a UUID, we can request status callbacks for this SMS
 	if uuid != "" {
 		u.Set("StatusCallback", fmt.Sprint(c.Config.Service.CallbackURLBase, "/", uuid, "/callback"))
 	}
 
+	// Post the request to the Twilio API
 	body := *strings.NewReader(u.Encode())
-
 	client := &http.Client{}
 	req, _ := http.NewRequest("POST", fmt.Sprint(c.Config.Integrations.Twilio.APIBaseURL, c.Config.Integrations.Twilio.AccountSID, "/Messages.json"), &body)
 	req.SetBasicAuth(c.Config.Integrations.Twilio.AccountSID, c.Config.Integrations.Twilio.AuthToken)
@@ -78,6 +84,7 @@ func SendSMS(phoneNumber, message, uuid string, dontSendAckRequest bool) {
 		log.Println("SendSMS() Request error:", err)
 	}
 
+	// Get the response
 	b, err := ioutil.ReadAll(io.LimitReader(resp.Body, 1024*20))
 	resp.Body.Close()
 
@@ -87,8 +94,8 @@ func SendSMS(phoneNumber, message, uuid string, dontSendAckRequest bool) {
 	}
 
 	if uuid != "" {
-		// We make a conversation key that's a combination of our recipient's phone number and the random 3-digit key
-		// that we generated abovee
+		// We create conversation key that's a combination of our recipient's phone number and the random 3-digit key
+		// that we generated above
 		conversationKey := fmt.Sprint(cr.To, "::", ackReply)
 
 		NIP.Mu.Lock()
@@ -99,15 +106,19 @@ func SendSMS(phoneNumber, message, uuid string, dontSendAckRequest bool) {
 
 }
 
+// Makes a phone call to a phone number using the Twilio API.  Sends Twilio a URL for
+// retrieving the TwiML that defines the interaction in the call.
 func MakePhoneCall(phoneNumber, message, uuid string) {
 	var cr map[string]interface{}
 
 	log.Println("[", uuid, "] Calling", phoneNumber, "with message:", message)
 
+	// Build a form that we'll POST to the Twilio API to initiate a phone call
 	u := url.Values{}
 	u.Set("From", c.Config.Integrations.Twilio.CallFromNumber)
 	u.Set("To", phoneNumber)
 	u.Set("Url", fmt.Sprint(c.Config.Service.CallbackURLBase, "/", uuid, "/twiml/notify"))
+	// Optional status callbacks are enabled below...
 	// u.Set("StatusCallback", fmt.Sprint(c.Config.Service.CallbackURLBase, "/", uuid, "/callback"))
 	// u.Add("StatusCallbackEvent", "ringing")
 	// u.Add("StatusCallbackEvent", "answered")
@@ -116,6 +127,7 @@ func MakePhoneCall(phoneNumber, message, uuid string) {
 	u.Set("Timeout", "20")
 	body := *strings.NewReader(u.Encode())
 
+	// Send our form to Twilio
 	client := &http.Client{}
 	req, _ := http.NewRequest("POST", fmt.Sprint(c.Config.Integrations.Twilio.APIBaseURL, c.Config.Integrations.Twilio.AccountSID, "/Calls.json"), &body)
 	req.SetBasicAuth(c.Config.Integrations.Twilio.AccountSID, c.Config.Integrations.Twilio.AuthToken)
@@ -130,6 +142,7 @@ func MakePhoneCall(phoneNumber, message, uuid string) {
 	b, err := ioutil.ReadAll(io.LimitReader(resp.Body, 1024*20))
 	resp.Body.Close()
 
+	// We get the response back but don't currently do anything with it.   TO DO: implement error handling
 	err = json.Unmarshal(b, &cr)
 	if err != nil {
 		log.Fatalln("MakePhoneCall() Error unmarshalling JSON:", err)
@@ -137,12 +150,15 @@ func MakePhoneCall(phoneNumber, message, uuid string) {
 
 }
 
+// Receives the SMS reply callback from Twilio and deletes the notification if the
+// response text matches the code sent with the original SMS notification
 func ReceiveSMSReply(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Println("ReceiveSMSReply() r.ParseForm() error:", err)
 	}
 
+	// We should have a "From" parameter being passed from Twilio
 	recipient := r.FormValue("From")
 	if recipient == "" {
 		log.Println("ReceiveSMSReply() error: 'From' parameter was not provided in response")
@@ -151,8 +167,11 @@ func ReceiveSMSReply(w http.ResponseWriter, r *http.Request) {
 
 	NIP.Mu.Lock()
 
+	// Our conversation key is a combination of the recipient's phone number and the 3-digit code
+	// that they sent in reply
 	conversationKey := fmt.Sprint(recipient, "::", r.FormValue("Body"))
 
+	// See if this SMS conversation is active.  If it is, look up the UUID with the conversation key.
 	if _, exists := NIP.Conversations[conversationKey]; exists {
 		uuid := NIP.Conversations[conversationKey]
 
@@ -184,6 +203,8 @@ func ReceiveSMSReply(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Receives call progress callbacks from the Twilio API.  Not currently used.
+// May be used for Websocket interface in the future.
 func ReceiveCallback(w http.ResponseWriter, r *http.Request) {
 	var res CallbackResponse
 
@@ -203,6 +224,8 @@ func ReceiveCallback(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Receives digits pressed during a phone call via callback by the Twilio API.
+// Stops the notification if the user pressed any keys.
 func ReceiveDigits(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -232,8 +255,8 @@ func ReceiveDigits(w http.ResponseWriter, r *http.Request) {
 		u := url.Values{}
 		u.Set("Url", fmt.Sprint(c.Config.Service.CallbackURLBase, "/", uuid, "/twiml/acknowledged"))
 
+		// Send our POST to Twilio
 		body := *strings.NewReader(u.Encode())
-
 		client := &http.Client{}
 		req, _ := http.NewRequest("POST", fmt.Sprint(c.Config.Integrations.Twilio.APIBaseURL, c.Config.Integrations.Twilio.AccountSID, "/Calls/", callSid), &body)
 		req.SetBasicAuth(c.Config.Integrations.Twilio.AccountSID, c.Config.Integrations.Twilio.AuthToken)
@@ -251,6 +274,7 @@ func ReceiveDigits(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// This Twilio callback generates TwiML that is used to describe the flow of the phone call.
 func GenerateTwiML(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
@@ -298,5 +322,6 @@ func GenerateTwiML(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	// Reply to the callback with the TwiML content
 	resp.Send(w)
 }
