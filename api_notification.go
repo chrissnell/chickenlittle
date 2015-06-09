@@ -24,6 +24,7 @@ type NotifyPersonResponse struct {
 	Error    string `json:"error"`
 }
 
+// Notifies a Person by looking up their NotificationPlan and sending it to the notification engine.
 func NotifyPerson(w http.ResponseWriter, r *http.Request) {
 	var res NotifyPersonResponse
 	var req NotificationRequest
@@ -58,10 +59,12 @@ func NotifyPerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Assign a UUID
+	// Assign a UUID to this notification.  The UUID is used to track notifications-in-progress (NIP) and to stop
+	// them when requested.
 	uuid.SwitchFormat(uuid.CleanHyphen)
 	req.Plan.ID = uuid.NewV4()
 
+	// Send our NotificationRequest to the notification engine
 	planChan <- &req
 
 	res = NotifyPersonResponse{
@@ -75,6 +78,7 @@ func NotifyPerson(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Stop a notification-in-progress (NIP) by sending the UUID to the notification engine
 func StopNotification(w http.ResponseWriter, r *http.Request) {
 	var res NotifyPersonResponse
 
@@ -107,6 +111,7 @@ func StopNotification(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
+// A simple GET-able endpoint to stop notifications when a link is clicked in an email client
 func StopNotificationClick(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)

@@ -10,6 +10,7 @@ type DB struct {
 	Handle *bolt.DB
 }
 
+// Open the BoltDB file
 func (db *DB) Open(dbfile string) {
 	var err error
 
@@ -21,11 +22,13 @@ func (db *DB) Open(dbfile string) {
 	return
 }
 
+// Close the BoltDB file
 func (db *DB) Close() {
 	db.Handle.Close()
 	return
 }
 
+// Store a key/value in a BoltDB bucket
 func (d *DB) Store(bucket, key, value string) error {
 
 	log.Println("Storing:", key)
@@ -47,6 +50,7 @@ func (d *DB) Store(bucket, key, value string) error {
 	return err
 }
 
+// Delete a key from a BoltDB bucket
 func (d *DB) Delete(bucket, key string) error {
 
 	log.Println("Deleting", key, "from bucket", bucket)
@@ -68,6 +72,7 @@ func (d *DB) Delete(bucket, key string) error {
 	return err
 }
 
+// Fetch a key from a BoltDB bucket
 func (d *DB) Fetch(bucket, key string) (string, error) {
 
 	var val string
@@ -92,6 +97,7 @@ func (d *DB) Fetch(bucket, key string) (string, error) {
 	return val, err
 }
 
+// Fetch every key from a BoltDB bucket
 func (d *DB) FetchAll(bucket string) ([]string, error) {
 	var vals []string
 
