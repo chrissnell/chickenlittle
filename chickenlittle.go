@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 )
 
 var (
+	cfgFile  *string
 	c        ChickenLittle
 	NIP      NotificationsInProgress
 	planChan = make(chan *NotificationRequest)
@@ -23,11 +25,14 @@ type ChickenLittle struct {
 
 func main() {
 
+	cfgFile = flag.String("config", "config.yaml", "Path to config file (default: ./config.yaml)")
+	flag.Parse()
+
 	// Read our server configuration
-	filename, _ := filepath.Abs("./config.yaml")
+	filename, _ := filepath.Abs(*cfgFile)
 	cfgFile, err := ioutil.ReadFile(filename)
 	if err != nil {
-		log.Fatalln("Error:", err)
+		log.Fatalln("Error opening config file.  Did you pass the -config flag?  Run with -h for help.\n", err)
 	}
 	err = yaml.Unmarshal(cfgFile, &c.Config)
 	if err != nil {

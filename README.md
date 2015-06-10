@@ -33,7 +33,7 @@ You'll need a Twilio account if you want to notify by voice and/or SMS.  You'll 
 6. Edit the config file and fill in your Twilio and/or Mailgun API keys, endpoint URLs, etc.  For the click_url_base and callback_url_base, you can use a service like [ngrok](http://ngrok.com) for testing or you can run Chicken Little on a public network and put the base URL to your server here. 
 
 7. Start the Chicken Little service:
-```cd /opt/chickenlittle; /usr/local/bin/chickenlittle```
+```/usr/local/bin/chickenlittle -config PATH_TO_YOUR_CONFIG_YAML```
 
 8. Follow the API instructions to create users and set up notification plans
 
