@@ -29,8 +29,13 @@ type Twilio struct {
 }
 
 type Mailgun struct {
+	Enabled  bool   `yaml:"enabled"`
 	APIKey   string `yaml:"api_key"`
 	Hostname string `yaml:"hostname"`
+}
+
+type SMTP struct {
+	Hostname bool `yaml:"hostname"`
 }
 
 type VictorOps struct {
