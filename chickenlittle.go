@@ -83,6 +83,21 @@ func main() {
 	apiRouter.HandleFunc("/notifications/{uuid}", StopNotification).
 		Methods("DELETE")
 
+	apiRouter.HandleFunc("/teams", ListTeams).
+		Methods("GET")
+
+	apiRouter.HandleFunc("/teams", CreateTeam).
+		Methods("POST")
+
+	apiRouter.HandleFunc("/teams/{team}", ShowTeam).
+		Methods("GET")
+
+	apiRouter.HandleFunc("/teams/{team}", DeleteTeam).
+		Methods("DELETE")
+
+	apiRouter.HandleFunc("/teams/{team}", UpdateTeam).
+		Methods("PUT")
+
 	go func() {
 		log.Fatal(http.ListenAndServe(c.Config.Service.APIListenAddr, apiRouter))
 	}()
