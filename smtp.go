@@ -1,8 +1,15 @@
 package main
 
-import ()
+import (
+	"fmt"
+	"github.com/jpoehls/gophermail"
+	"log"
+	"net/mail"
+	"net/smtp"
+	"time"
+)
 
-func SendEmailSMTP(address, plain, html string) {
+func SendEmailSMTP(address, subject, plain, html string) {
 	// Set up authentication information
 	auth := smtp.PlainAuth(
 		"",
@@ -10,16 +17,29 @@ func SendEmailSMTP(address, plain, html string) {
 		c.Config.Integrations.SMTP.Password,
 		c.Config.Integrations.SMTP.Hostname,
 	)
-	// TODO set plain and HTML multi-parts
+
+	from := mail.Address{Address: c.Config.Integrations.SMTP.Sender}
+	to := mail.Address{Address: address}
+	headers := mail.Header{}
+	headers["Date"] = []string{time.Now().Format(time.RFC822Z)}
+
+	message := &gophermail.Message{
+		From:     from,
+		To:       []mail.Address{to},
+		Subject:  subject,
+		Body:     plain,
+		HTMLBody: html,
+		Headers:  headers,
+	}
+
 	// Connect to the server, auth and send
-	err := smtp.SendMail(
-		c.Config.Integrations.SMTP.Hostname+":"+c.Config.Integrations.SMTP.Port,
+	host := fmt.Sprintf("%s:%d", c.Config.Integrations.SMTP.Hostname, c.Config.Integrations.SMTP.Port)
+	err := gophermail.SendMail(
+		host,
 		auth,
-		c.Config.Integrations.SMTP.Sender,
-		[]string{address},
-		[]byte(plain),
+		message,
 	)
 	if err != nil {
-		log.Println(err)
+		log.Println("SMTP-Error:", err)
 	}
 }
