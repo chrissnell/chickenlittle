@@ -43,11 +43,25 @@ func main() {
 	c.DB.Open(c.Config.Service.DBFile)
 	defer c.DB.Close()
 
-	// Creat our stop channel and launch the notification engine
+	// Create our stop channel and launch the notification engine
 	stopChan = make(chan string)
 	go StartNotificationEngine()
 
 	// Set up our API endpoint router
+	go func() {
+		log.Fatal(http.ListenAndServe(c.Config.Service.APIListenAddr, apiRouter()))
+	}()
+
+	// Set up our Twilio callback endpoint router
+	go func() {
+		log.Fatal(http.ListenAndServe(c.Config.Service.CallbackListenAddr, callbackRouter()))
+	}()
+
+	// Set up our Click endpoint router to handle stop requests from browsers
+	log.Fatal(http.ListenAndServe(c.Config.Service.ClickListenAddr, clickRouter()))
+}
+
+func apiRouter() *mux.Router {
 	apiRouter := mux.NewRouter().StrictSlash(true)
 
 	apiRouter.HandleFunc("/people", ListPeople).
@@ -98,11 +112,10 @@ func main() {
 	apiRouter.HandleFunc("/teams/{team}", UpdateTeam).
 		Methods("PUT")
 
-	go func() {
-		log.Fatal(http.ListenAndServe(c.Config.Service.APIListenAddr, apiRouter))
-	}()
+	return apiRouter
+}
 
-	// Set up our Twilio callback endpoint router
+func callbackRouter() *mux.Router {
 	callbackRouter := mux.NewRouter().StrictSlash(true)
 
 	callbackRouter.HandleFunc("/{uuid}/twiml/{action}", GenerateTwiML).
@@ -117,16 +130,14 @@ func main() {
 	callbackRouter.HandleFunc("/sms", ReceiveSMSReply).
 		Methods("POST")
 
-	go func() {
-		log.Fatal(http.ListenAndServe(c.Config.Service.CallbackListenAddr, callbackRouter))
-	}()
+	return callbackRouter
+}
 
-	// Set up our Click endpoint router to handle stop requests from browsers
+func clickRouter() *mux.Router {
 	clickRouter := mux.NewRouter().StrictSlash(true)
 
 	clickRouter.HandleFunc("/{uuid}/stop", StopNotificationClick).
 		Methods("GET")
 
-	log.Fatal(http.ListenAndServe(c.Config.Service.ClickListenAddr, clickRouter))
-
+	return clickRouter
 }
