@@ -36,7 +36,7 @@ func ListTeams(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-// Fetches a single person form the DB and returns them as JSON
+// Fetches a single team from the DB and returns them as JSON
 func ShowTeam(w http.ResponseWriter, r *http.Request) {
 	var res TeamsResponse
 
@@ -74,7 +74,7 @@ func DeleteTeam(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-// Creates a new person in the database
+// Creates a new team in the database
 func CreateTeam(w http.ResponseWriter, r *http.Request) {
 	var res TeamsResponse
 	var t Team
@@ -96,7 +96,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Attempt to unmarshall the JSON into our Person struct
+	// Attempt to unmarshall the JSON into our Team struct
 	err = json.Unmarshal(body, &t)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -110,7 +110,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) {
 	if t.Name == "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = "Must provide username and fullname"
+		res.Error = "Must provide a team name"
 		json.NewEncoder(w).Encode(res)
 		return
 	}
@@ -131,7 +131,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) {
 	// Store our new team in the DB
 	err = c.StoreTeam(&t)
 	if err != nil {
-		log.Println("Error storing person:", err)
+		log.Println("Error storing team:", err)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		res.Error = err.Error()
@@ -144,7 +144,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-// Updates an existing person in the database
+// Updates an existing team in the database
 func UpdateTeam(w http.ResponseWriter, r *http.Request) {
 	var res TeamsResponse
 	var t Team
@@ -177,7 +177,7 @@ func UpdateTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Make sure the user actually exists before updating
+	// Make sure the team actually exists before updating
 	fp, err := c.GetTeam(name)
 	if fp != nil && fp.Name == "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -190,10 +190,10 @@ func UpdateTeam(w http.ResponseWriter, r *http.Request) {
 		log.Println("GetTeam() failed for", name)
 	}
 
-	// Now that we know our team exists in the DB, copy the username from the URI path and add it to our struct
+	// Now that we know our team exists in the DB, copy the name from the URI path and add it to our struct
 	t.Name = name
 
-	// Store the updated user in the DB
+	// Store the updated team in the DB
 	err = c.StoreTeam(&t)
 	if err != nil {
 		log.Println("Error storing team", err)
