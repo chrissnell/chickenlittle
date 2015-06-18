@@ -12,6 +12,7 @@ You'll need a Twilio account if you want to notify by voice and/or SMS.  You'll 
 - **[People API](https://github.com/chrissnell/chickenlittle/blob/master/docs/PEOPLE_API.md)** - used for adding and deleting people in the system.
 - **[Notification Plan API](https://github.com/chrissnell/chickenlittle/blob/master/docs/NOTIFICATION_PLAN_API.md)** - used to define how people are notified (contact methods, order, and timing)
 - **[Notification API](https://github.com/chrissnell/chickenlittle/blob/master/docs/NOTIFICATION_API.md)** - used to send notifications to a person using their notification plan
+- **[Team API](https://github.com/chrissnell/chickenlittle/blob/master/docs/TEAM_API.md)** - (*WORK IN PROGRESS*) used to create/modify/delete teams of people
 
 # Quick Start
 1. You'll need [Go](http://golang.org/) installed to build the binary.
@@ -42,7 +43,7 @@ You'll need a Twilio account if you want to notify by voice and/or SMS.  You'll 
 
 # Authors
 - [Christopher Snell](http://output.chrissnell.com) - Chicken Little author
-- [Dominik Schulz](https://github.com/dominikschulz) - Wrote the SMTP server support
+- [Dominik Schulz](https://github.com/dominikschulz) - Wrote the SMTP server support and the Team API
 
 
 # License
