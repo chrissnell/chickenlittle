@@ -127,7 +127,7 @@ func CreatePerson(w http.ResponseWriter, r *http.Request) {
 	if fp != nil && fp.Username != "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = fmt.Sprint("User ", p.Username, " already exists. Use PUT /people/", p.Username, "/ to update.")
+		res.Error = fmt.Sprint("User ", p.Username, " already exists. Use PUT /people/", p.Username, " to update.")
 		json.NewEncoder(w).Encode(res)
 		return
 	}

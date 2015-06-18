@@ -120,7 +120,7 @@ func CreateTeam(w http.ResponseWriter, r *http.Request) {
 	if fp != nil && fp.Name != "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = fmt.Sprint("Team ", t.Name, " already exists. Use PUT /teams/", t.Name, "/ to update.")
+		res.Error = fmt.Sprint("Team ", t.Name, " already exists. Use PUT /teams/", t.Name, " to update.")
 		json.NewEncoder(w).Encode(res)
 		return
 	}
