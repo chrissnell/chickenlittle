@@ -19,6 +19,7 @@ type Integrations struct {
 	VictorOps VictorOps `yaml:"victorops"`
 	Twilio    Twilio    `yaml:"twilio"`
 	Mailgun   Mailgun   `yaml:"mailgun"`
+	SMTP      SMTP      `yaml:"smtp"`
 }
 
 type Twilio struct {
@@ -29,8 +30,17 @@ type Twilio struct {
 }
 
 type Mailgun struct {
+	Enabled  bool   `yaml:"enabled"`
 	APIKey   string `yaml:"api_key"`
 	Hostname string `yaml:"hostname"`
+}
+
+type SMTP struct {
+	Hostname string `yaml:"hostname"`
+	Port     int    `yaml:"port"`
+	Login    string `yaml:"login"`
+	Password string `yaml:"password"`
+	Sender   string `yaml:"sender"`
 }
 
 type VictorOps struct {

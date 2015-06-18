@@ -12,6 +12,7 @@ integrations:
     api_base_url: https://api.twilio.com/2010-04-01/Accounts/
     call_from_number: your-twilio-phone-number-goes-here
   mailgun:
+    enabled: true
     api_key: your-mailgun-key-goes-here
     hostname: yourhostname.mailgun.org
   hipchat:
@@ -19,3 +20,9 @@ integrations:
     hipchat_announce_room:  NotYetImplemented
   victorops:
     api_key:  your-api-key-goes-here
+  smtp:
+    hostname: your-smtp-hostname
+    port: 587
+    login: your-smtp-login
+    password: your-smtp-password
+    sender: your-smtp-sender-address
