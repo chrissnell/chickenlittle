@@ -39,7 +39,9 @@ You'll need a Twilio account if you want to notify by voice and/or SMS.  You'll 
 8. Follow the API instructions to create users and set up notification plans
 
 # To Do
-- Implement on-call scheduling to swap out notification plans depending on who is on call.
+- Implement on-call rotations for teams of people
+- Authentication and role-based access control (RBAC) for various API functions.
+- More test coverage
 
 # Authors
 - [Christopher Snell](http://output.chrissnell.com) - Chicken Little author
