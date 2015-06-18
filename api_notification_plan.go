@@ -46,7 +46,18 @@ func DeleteNotificationPlan(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["person"]
 
-	err := c.DeleteNotificationPlan(username)
+	np, err := c.GetNotificationPlan(username)
+	if np == nil {
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = fmt.Sprint("Notification plan for user ", username, " doesn't exist and thus, cannot be deleted")
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+	if err != nil {
+		log.Println("GetNotificationPlan() failed for", username)
+	}
+
+	err = c.DeleteNotificationPlan(username)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
