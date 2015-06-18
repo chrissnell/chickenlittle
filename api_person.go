@@ -13,7 +13,7 @@ import (
 )
 
 type PeopleResponse struct {
-	People  []Person `json:"people,omitempty"`
+	People  []Person `json:"people"`
 	Message string   `json:"message"`
 	Error   string   `json:"error"`
 }
@@ -70,7 +70,20 @@ func DeletePerson(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["person"]
 
-	err := c.DeletePerson(username)
+	// Make sure the user actually exists before updating
+	p, err := c.GetPerson(username)
+	if p == nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = fmt.Sprint("User ", username, " does not exist and thus, cannot be deleted")
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+	if err != nil {
+		log.Println("GetPerson() failed for", username)
+	}
+
+	err = c.DeletePerson(username)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -127,7 +140,7 @@ func CreatePerson(w http.ResponseWriter, r *http.Request) {
 	if fp != nil && fp.Username != "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = fmt.Sprint("User ", p.Username, " already exists. Use PUT /people/", p.Username, "/ to update.")
+		res.Error = fmt.Sprint("User ", p.Username, " already exists. Use PUT /people/", p.Username, " to update.")
 		json.NewEncoder(w).Encode(res)
 		return
 	}
@@ -195,7 +208,7 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 
 	// Make sure the user actually exists before updating
 	fp, err := c.GetPerson(username)
-	if fp != nil && fp.Username == "" {
+	if (fp != nil && fp.Username == "") || fp == nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		res.Error = fmt.Sprint("User ", p.Username, " does not exist. Use POST to create.")
