@@ -40,6 +40,11 @@ You'll need a Twilio account if you want to notify by voice and/or SMS.  You'll 
 # To Do
 - Implement on-call scheduling to swap out notification plans depending on who is on call.
 
+# Authors
+- [Christopher Snell](http://output.chrissnell.com) - Chicken Little author
+- [Dominik Schulz](https://github.com/dominikschulz) - Wrote the SMTP server support
+
+
 # License
 ```
 Copyright (C) 2015 Christopher Snell
