@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 )
 
 type Person struct {
@@ -44,6 +45,7 @@ func (c *ChickenLittle) GetAllPeople() ([]*Person, error) {
 
 	jp, err := c.DB.FetchAll("people")
 	if err != nil {
+		log.Println("Error fetching all people from DB:", err, "(Have you added any people?)")
 		return nil, fmt.Errorf("Could not fetch all people from DB")
 	}
 

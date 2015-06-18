@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 )
 
 type Team struct {
@@ -46,6 +47,7 @@ func (c *ChickenLittle) GetAllTeams() ([]*Team, error) {
 
 	jt, err := c.DB.FetchAll("teams")
 	if err != nil {
+		log.Println("Error fetching all teams from DB:", err, "(Have you added any teams?)")
 		return nil, fmt.Errorf("Could not fetch all teams from DB")
 	}
 

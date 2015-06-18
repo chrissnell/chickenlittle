@@ -115,7 +115,7 @@ func (d *DB) FetchAll(bucket string) ([]string, error) {
 		})
 
 		if len(vals) == 0 {
-			return fmt.Errorf("There are no keys in bucket", bucket)
+			return fmt.Errorf("There are no items in bucket %v", bucket)
 
 		}
 
