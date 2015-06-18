@@ -70,7 +70,20 @@ func DeletePerson(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["person"]
 
-	err := c.DeletePerson(username)
+	// Make sure the user actually exists before updating
+	p, err := c.GetPerson(username)
+	if p == nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = fmt.Sprint("User ", username, " does not exist and thus, cannot be deleted")
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+	if err != nil {
+		log.Println("GetPerson() failed for", username)
+	}
+
+	err = c.DeletePerson(username)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

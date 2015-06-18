@@ -68,7 +68,7 @@ func DeleteTeam(w http.ResponseWriter, r *http.Request) {
 	if t == nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = fmt.Sprint("Team ", name, " does not exist and thus cannot be deleted")
+		res.Error = fmt.Sprint("Team ", name, " does not exist and thus, cannot be deleted")
 		json.NewEncoder(w).Encode(res)
 		return
 	}
