@@ -13,7 +13,7 @@ import (
 )
 
 type PeopleResponse struct {
-	People  []Person `json:"people,omitempty"`
+	People  []Person `json:"people"`
 	Message string   `json:"message"`
 	Error   string   `json:"error"`
 }

@@ -12,7 +12,7 @@ import (
 )
 
 type TeamsResponse struct {
-	Teams   []Team `json:"teams,omitempty"`
+	Teams   []Team `json:"teams"`
 	Message string `json:"message"`
 	Error   string `json:"error"`
 }
