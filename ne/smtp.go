@@ -1,24 +1,25 @@
-package main
+package ne
 
 import (
 	"fmt"
-	"github.com/jpoehls/gophermail"
 	"log"
 	"net/mail"
 	"net/smtp"
 	"time"
+
+	"github.com/jpoehls/gophermail"
 )
 
-func SendEmailSMTP(address, subject, plain, html string) {
+func (e *Engine) SendEmailSMTP(address, subject, plain, html string) {
 	// Set up authentication information
 	auth := smtp.PlainAuth(
 		"",
-		c.Config.Integrations.SMTP.Login,
-		c.Config.Integrations.SMTP.Password,
-		c.Config.Integrations.SMTP.Hostname,
+		e.Config.SMTP.Login,
+		e.Config.SMTP.Password,
+		e.Config.SMTP.Hostname,
 	)
 
-	from := mail.Address{Address: c.Config.Integrations.SMTP.Sender}
+	from := mail.Address{Address: e.Config.SMTP.Sender}
 	to := mail.Address{Address: address}
 	headers := mail.Header{}
 	headers["Date"] = []string{time.Now().Format(time.RFC822Z)}
@@ -33,7 +34,7 @@ func SendEmailSMTP(address, subject, plain, html string) {
 	}
 
 	// Connect to the server, auth and send
-	host := fmt.Sprintf("%s:%d", c.Config.Integrations.SMTP.Hostname, c.Config.Integrations.SMTP.Port)
+	host := fmt.Sprintf("%s:%d", e.Config.SMTP.Hostname, e.Config.SMTP.Port)
 	err := gophermail.SendMail(
 		host,
 		auth,

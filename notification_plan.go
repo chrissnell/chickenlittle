@@ -18,6 +18,18 @@ type NotificationStep struct {
 	NotifyUntilPeriod time.Duration `json:"notify_until_period"`
 }
 
+func (ns NotificationStep) NotifyMethod() string {
+	return ns.Method
+}
+
+func (ns NotificationStep) Frequency() time.Duration {
+	return ns.NotifyEveryPeriod
+}
+
+func (ns NotificationStep) Until() time.Duration {
+	return ns.NotifyUntilPeriod
+}
+
 type NotificationPlan struct {
 	ID       uuid.UUID
 	Username string             `json:"username"`

@@ -7,20 +7,20 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/chrissnell/chickenlittle/ne"
 	"github.com/gorilla/mux"
 	"gopkg.in/yaml.v2"
 )
 
 var (
-	cfgFile  *string
-	c        ChickenLittle
-	NIP      NotificationsInProgress
-	planChan = make(chan *NotificationRequest)
+	cfgFile *string
+	c       ChickenLittle
 )
 
 type ChickenLittle struct {
 	Config Config
 	DB     DB
+	Notify *ne.Engine
 }
 
 func main() {
@@ -43,9 +43,23 @@ func main() {
 	c.DB.Open(c.Config.Service.DBFile)
 	defer c.DB.Close()
 
-	// Create our stop channel and launch the notification engine
-	stopChan = make(chan string)
-	go StartNotificationEngine()
+	// Launch the notification engine
+	neConfig := ne.Config{}
+	neConfig.Twilio.AccountSID = c.Config.Integrations.Twilio.AccountSID
+	neConfig.Twilio.AuthToken = c.Config.Integrations.Twilio.AuthToken
+	neConfig.Twilio.CallFromNumber = c.Config.Integrations.Twilio.CallFromNumber
+	neConfig.Twilio.APIBaseURL = c.Config.Integrations.Twilio.APIBaseURL
+	neConfig.Mailgun.Enabled = c.Config.Integrations.Mailgun.Enabled
+	neConfig.Mailgun.APIKey = c.Config.Integrations.Mailgun.APIKey
+	neConfig.Mailgun.Hostname = c.Config.Integrations.Mailgun.Hostname
+	neConfig.SMTP.Hostname = c.Config.Integrations.SMTP.Hostname
+	neConfig.SMTP.Port = c.Config.Integrations.SMTP.Port
+	neConfig.SMTP.Login = c.Config.Integrations.SMTP.Login
+	neConfig.SMTP.Password = c.Config.Integrations.SMTP.Password
+	neConfig.SMTP.Sender = c.Config.Integrations.SMTP.Sender
+	neConfig.Service.ClickURLBase = c.Config.Service.ClickURLBase
+	neConfig.Service.CallbackURLBase = c.Config.Service.CallbackURLBase
+	c.Notify = ne.New(neConfig)
 
 	// Set up our API endpoint router
 	go func() {
