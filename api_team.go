@@ -58,12 +58,25 @@ func ShowTeam(w http.ResponseWriter, r *http.Request) {
 
 // Deletes the specified team from the database
 func DeleteTeam(w http.ResponseWriter, r *http.Request) {
-	var res PeopleResponse
+	var res TeamsResponse
 
 	vars := mux.Vars(r)
 	name := vars["team"]
 
-	err := c.DeleteTeam(name)
+	// Make sure the team actually exists before deleting
+	t, err := c.GetTeam(name)
+	if t == nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = fmt.Sprint("Team ", name, " does not exist and thus cannot be deleted")
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+	if err != nil {
+		log.Println("GetTeam() failed for", name)
+	}
+
+	err = c.DeleteTeam(name)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
