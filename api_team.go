@@ -192,7 +192,7 @@ func UpdateTeam(w http.ResponseWriter, r *http.Request) {
 
 	// Make sure the team actually exists before updating
 	fp, err := c.GetTeam(name)
-	if fp != nil && fp.Name == "" {
+	if (fp != nil && fp.Name == "") || fp == nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		res.Error = fmt.Sprint("Team ", t.Name, " does not exist. Use POST to create.")

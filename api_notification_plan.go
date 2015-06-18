@@ -224,7 +224,7 @@ func UpdateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	np, err := c.GetNotificationPlan(username)
-	if (np != nil && np.Username == "") || err != nil {
+	if (np != nil && np.Username == "") || np == nil {
 		w.WriteHeader(422) // unprocessable entity
 		res.Error = fmt.Sprint("Notification plan for user ", username, " doesn't exist. Use POST /plan/", username, " to create one first before attempting to update.")
 		json.NewEncoder(w).Encode(res)

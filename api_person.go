@@ -208,7 +208,7 @@ func UpdatePerson(w http.ResponseWriter, r *http.Request) {
 
 	// Make sure the user actually exists before updating
 	fp, err := c.GetPerson(username)
-	if fp != nil && fp.Username == "" {
+	if (fp != nil && fp.Username == "") || fp == nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		res.Error = fmt.Sprint("User ", p.Username, " does not exist. Use POST to create.")
