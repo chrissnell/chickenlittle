@@ -7,7 +7,7 @@
 POST /people/USERNAME/notify
 
     {
-        "content": "Dinnertime, chickies, lets all eat.  Wash your wings and take a seat.",
+        "content": "Dinnertime, chickies, lets all eat.  Wash your wings and take a seat."
     }
 ```
 
