@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"time"
 )
 
@@ -40,22 +42,80 @@ type EscalationStep struct {
 	Target               string           `yaml:"target" json:"target"`         // Who or what to do the action with
 }
 
-func (e *EscalationMethod) Marshal() ([]byte, error) {
+func (e *EscalationPlan) Marshal() ([]byte, error) {
 	je, err := json.Marshal(&e)
 	return je, err
 }
 
-func (e *EscalationMethod) Unmarshal(je string) error {
+func (e *EscalationPlan) Unmarshal(je string) error {
 	err := json.Unmarshal([]byte(je), &e)
 	return err
 }
 
-func (e *EscalationStep) Marshal() ([]byte, error) {
-	je, err := json.Marshal(&e)
-	return je, err
+// Fetch an Escalation Plan from the DB
+func (c *ChickenLittle) GetEscalationPlan(p string) (*EscalationPlan, error) {
+	jp, err := c.DB.Fetch("escalationplans", p)
+	if err != nil {
+		return nil, fmt.Errorf("Could not fetch escalation plan %v from DB", p)
+	}
+
+	plan := &EscalationPlan{}
+
+	err = plan.Unmarshal(jp)
+	if err != nil {
+		return nil, fmt.Errorf("Could not unmarshal escalation plan from DB.  Err: %v  JSON: %v", err, jp)
+	}
+
+	return plan, nil
 }
 
-func (e *EscalationStep) Unmarshal(je string) error {
-	err := json.Unmarshal([]byte(je), &e)
-	return err
+// Fetch every Escalation Plan from the DB
+func (c *ChickenLittle) GetAllEscalationPlans() ([]*EscalationPlan, error) {
+	var plans []*EscalationPlan
+
+	jp, err := c.DB.FetchAll("escalationplans")
+	if err != nil {
+		log.Println("Error fetching all escalation plans from DB:", err, "(Have you added any escalation plans?)")
+		return nil, fmt.Errorf("Could not fetch all escalation plans from DB")
+	}
+
+	for _, v := range jp {
+		plan := &EscalationPlan{}
+
+		err = plan.Unmarshal(v)
+		if err != nil {
+			return nil, fmt.Errorf("Could not unmarshal escalation plan from DB.  Err: %v  JSON: %v", err, jp)
+		}
+
+		plans = append(plans, plan)
+	}
+
+	return plans, nil
+}
+
+// Store an Escalation Plan in the DB
+func (c *ChickenLittle) StoreEscalationPlan(p *EscalationPlan) error {
+	jp, err := p.Marshal()
+	if err != nil {
+		return fmt.Errorf("Could not marshal escalation plan %+v", p)
+	}
+
+	// Note: the UUID needs to be generated at time of creation.  Do we generate it
+	//       in this file or do we generate it as part of the escalation plan API?
+	err = c.DB.Store("escalationplans", p.UUID, string(jp))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Delete an Escalation Plan from the DB
+func (c *ChickenLittle) DeleteEscalationPlan(p string) error {
+	err := c.DB.Delete("escalationplans", p)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
