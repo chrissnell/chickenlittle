@@ -8,6 +8,7 @@ import (
 // RotationPolicy defines how shifts are rotated. If the frequency is zero
 // no automatic rotations should be attempted.
 type RotationPolicy struct {
+	UUID              string        `yaml:"uuid" json:"uuid"`
 	Description       string        `yaml:"description" json:"description"`
 	RotationFrequency time.Duration `yaml:"frequency" json:"frequency"`
 	RotateTime        time.Time     `yaml:"time" json:"time"`

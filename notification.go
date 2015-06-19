@@ -55,7 +55,7 @@ func StartNotificationEngine() {
 			NIP.Messages[id] = nr.Content
 
 			// Launch a goroutine to handle plan processing
-			go notificationHandler(nr, NIP.Stoppers[id])
+			go personNotificationHandler(nr, NIP.Stoppers[id])
 
 			NIP.Mu.Unlock()
 		case stopUUID := <-stopChan:
@@ -80,7 +80,7 @@ func StartNotificationEngine() {
 
 // Receives notification requests from the notification engine and steps through the plan, making phone calls,
 // sending SMS, email, etc., as necessary.
-func notificationHandler(nr *NotificationRequest, sc <-chan bool) {
+func personNotificationHandler(nr *NotificationRequest, sc <-chan bool) {
 
 	var timerChan <-chan time.Time
 	var tickerChan <-chan time.Time
