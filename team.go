@@ -7,11 +7,11 @@ import (
 )
 
 type Team struct {
-	Name            string           `yaml:"name" json:"name"`
-	Description     string           `yaml:"description" json:"description"`
-	Members         []string         `yaml:"members" json:"members"`
-	Rotation        RotationPolicy   `yaml:"rotation" json:"rotation"`
-	EscalationSteps []EscalationStep `yaml:"steps" json:"steps"`
+	Name           string   `yaml:"name" json:"name"`
+	Description    string   `yaml:"description" json:"description"`
+	Members        []string `yaml:"members" json:"members"`
+	RotationPolicy string   `yaml:"rotation_policy" json:"rotation_policy"`
+	EscalationPlan string   `yaml:"escalation_plan" json:"escalation_plan"`
 }
 
 func (t *Team) Marshal() ([]byte, error) {
