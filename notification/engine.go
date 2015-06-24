@@ -1,4 +1,4 @@
-package ne
+package notification
 
 import (
 	"errors"
@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/chrissnell/chickenlittle/config"
 )
 
 // NotificationStep is one step of a notification process
@@ -26,8 +28,10 @@ type Notification interface {
 	Subject() string                    // return a mesage subject, if availabe, of a configurable default
 }
 
+// Engine is the core of the notification engine handling all notifications
+// and feedback handling.
 type Engine struct {
-	Config        Config
+	Config        config.Config
 	planChan      chan Notification
 	stopChan      chan string
 	mutex         *sync.Mutex // protects all below
@@ -36,7 +40,8 @@ type Engine struct {
 	conversations map[string]string
 }
 
-func New(c Config) *Engine {
+// New creates a new notification engine instace with a running worker goroutine.
+func New(c config.Config) *Engine {
 	ne := &Engine{
 		Config:        c,
 		planChan:      make(chan Notification, 100),
@@ -50,6 +55,9 @@ func New(c Config) *Engine {
 	return ne
 }
 
+// start should be run exactly once from within the constructor.
+// It will listen on the embedded chans for incoming notifications
+// and stop requests and launch the appropriate methods.
 func (e *Engine) start() {
 	for {
 		select {
@@ -61,6 +69,8 @@ func (e *Engine) start() {
 	}
 }
 
+// GetMessage will return the message for the notification
+// identified by the given UUID or an empty string.
 func (e *Engine) GetMessage(uuid string) string {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
@@ -71,6 +81,8 @@ func (e *Engine) GetMessage(uuid string) string {
 	return ""
 }
 
+// SetConversation will set the value to the given key in the
+// conversation map. Value should be an UUID string.
 func (e *Engine) SetConversation(key, value string) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
@@ -78,6 +90,8 @@ func (e *Engine) SetConversation(key, value string) {
 	e.conversations[key] = value
 }
 
+// GetConversation will return the UUID for the given
+// conversation key or an error.
 func (e *Engine) GetConversation(key string) (string, error) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
@@ -85,9 +99,11 @@ func (e *Engine) GetConversation(key string) (string, error) {
 	if value, found := e.conversations[key]; found {
 		return value, nil
 	}
-	return "", errors.New("Key not found")
+	return "", errors.New("Conversation not found")
 }
 
+// RemoveConversation will remove the given conversation
+// for the conversation map.
 func (e *Engine) RemoveConversation(key string) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
@@ -95,21 +111,29 @@ func (e *Engine) RemoveConversation(key string) {
 	delete(e.conversations, key)
 }
 
+// EnqueueNotification will place a new notification in the
+// notification queue chan. It will eventually be picked up by the embedded
+// worker goroutine and processed in it's own handler.
 func (e *Engine) EnqueueNotification(nr Notification) {
 	e.planChan <- nr
 }
 
+// CancelNotification will place a stop request in the stop queue chan.
+// It will be picked up by a running notification handler and the handler
+// should quit shortly after.
 func (e *Engine) CancelNotification(uuid string) {
 	e.stopChan <- uuid
 }
 
+// startNotification will setup a new notification handler for the
+// given notification request and run it in it's own goroutine.
 func (e *Engine) startNotification(nr Notification) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
 	id := nr.ID()
 	// Create a new stopper channel for this plan
-	e.stoppers[id] = make(chan struct{}, 10)
+	e.stoppers[id] = make(chan struct{})
 	// Store the message in the message map
 	e.notifications[id] = nr
 
@@ -117,6 +141,8 @@ func (e *Engine) startNotification(nr Notification) {
 	go e.notificationHandler(id)
 }
 
+// IsNotification looks up the given notification and
+// returns true if it is a notification currently being executed.
 func (e *Engine) IsNotification(uuid string) bool {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
@@ -125,6 +151,8 @@ func (e *Engine) IsNotification(uuid string) bool {
 	return found
 }
 
+// stopNotification will send a stop request to the given notification
+// or silently fail if the uuid is not a running notification.
 func (e *Engine) stopNotification(uuid string) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()

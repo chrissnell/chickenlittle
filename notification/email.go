@@ -1,4 +1,4 @@
-package ne
+package notification
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ func (e *Engine) SendEmail(address, message, uuid string) {
 	html := fmt.Sprint("<HTML><BODY>You've received a message from the Chicken Little alert system:<BR><BR>",
 		message, "<BR><BR><A HREF='", e.Config.Service.ClickURLBase, "/", uuid, "/stop'>Stop notifications for this alert</A></BODY></HTML>")
 
-	if e.Config.Mailgun.Enabled {
+	if e.Config.Integrations.Mailgun.Enabled {
 		e.SendEmailMailgun(address, subject, plain, html)
 	} else {
 		e.SendEmailSMTP(address, subject, plain, html)

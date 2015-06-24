@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/chrissnell/chickenlittle/ne"
+	"github.com/chrissnell/chickenlittle/notification"
 	"github.com/gorilla/mux"
 	"github.com/twinj/uuid"
 )
@@ -18,7 +18,7 @@ type NotifyPersonRequest struct {
 	step    int               `json:"-"`
 }
 
-func (n *NotifyPersonRequest) NextStep() (ne.NotificationStep, bool) {
+func (n *NotifyPersonRequest) NextStep() (notification.NotificationStep, bool) {
 	last := false
 	if n.step < len(n.Plan.Steps)-1 {
 		n.step++
@@ -47,7 +47,7 @@ type NotifyTeamRequest struct {
 	step    int `json:"-"`
 }
 
-func (n *NotifyTeamRequest) NextStep() (ne.NotificationStep, bool) {
+func (n *NotifyTeamRequest) NextStep() (notification.NotificationStep, bool) {
 	// TODO implement escalation logic ...
 	return NotificationStep{}, true
 }

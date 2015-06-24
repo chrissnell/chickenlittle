@@ -2,14 +2,13 @@ package main
 
 import (
 	"flag"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"path/filepath"
 
-	"github.com/chrissnell/chickenlittle/ne"
+	"github.com/chrissnell/chickenlittle/config"
+	"github.com/chrissnell/chickenlittle/notification"
 	"github.com/gorilla/mux"
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -18,9 +17,9 @@ var (
 )
 
 type ChickenLittle struct {
-	Config Config
+	Config config.Config
 	DB     DB
-	Notify *ne.Engine
+	Notify *notification.Engine
 }
 
 func main() {
@@ -30,36 +29,18 @@ func main() {
 
 	// Read our server configuration
 	filename, _ := filepath.Abs(*cfgFile)
-	cfgFile, err := ioutil.ReadFile(filename)
+	cfg, err := config.New(filename)
 	if err != nil {
-		log.Fatalln("Error opening config file.  Did you pass the -config flag?  Run with -h for help.\n", err)
+		log.Fatalln("Error reading config file.  Did you pass the -config flag?  Run with -h for help.\n", err)
 	}
-	err = yaml.Unmarshal(cfgFile, &c.Config)
-	if err != nil {
-		log.Fatalln("Error:", err)
-	}
+	c.Config = cfg
 
 	// Open our BoltDB handle
 	c.DB.Open(c.Config.Service.DBFile)
 	defer c.DB.Close()
 
 	// Launch the notification engine
-	neConfig := ne.Config{}
-	neConfig.Twilio.AccountSID = c.Config.Integrations.Twilio.AccountSID
-	neConfig.Twilio.AuthToken = c.Config.Integrations.Twilio.AuthToken
-	neConfig.Twilio.CallFromNumber = c.Config.Integrations.Twilio.CallFromNumber
-	neConfig.Twilio.APIBaseURL = c.Config.Integrations.Twilio.APIBaseURL
-	neConfig.Mailgun.Enabled = c.Config.Integrations.Mailgun.Enabled
-	neConfig.Mailgun.APIKey = c.Config.Integrations.Mailgun.APIKey
-	neConfig.Mailgun.Hostname = c.Config.Integrations.Mailgun.Hostname
-	neConfig.SMTP.Hostname = c.Config.Integrations.SMTP.Hostname
-	neConfig.SMTP.Port = c.Config.Integrations.SMTP.Port
-	neConfig.SMTP.Login = c.Config.Integrations.SMTP.Login
-	neConfig.SMTP.Password = c.Config.Integrations.SMTP.Password
-	neConfig.SMTP.Sender = c.Config.Integrations.SMTP.Sender
-	neConfig.Service.ClickURLBase = c.Config.Service.ClickURLBase
-	neConfig.Service.CallbackURLBase = c.Config.Service.CallbackURLBase
-	c.Notify = ne.New(neConfig)
+	c.Notify = notification.New(c.Config)
 
 	// Set up our API endpoint router
 	go func() {

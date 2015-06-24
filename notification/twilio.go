@@ -1,4 +1,4 @@
-package ne
+package notification
 
 import (
 	"encoding/json"
@@ -46,7 +46,7 @@ func (e *Engine) SendSMS(phoneNumber, message, uuid string, dontSendAckRequest b
 
 	// Builds a form that will be posted to Twilio API
 	u := url.Values{}
-	u.Set("From", e.Config.Twilio.CallFromNumber)
+	u.Set("From", e.Config.Integrations.Twilio.CallFromNumber)
 	u.Set("To", phoneNumber)
 
 	// Sometimes we send texts that don't require ACKing.  This handles that.
@@ -65,8 +65,8 @@ func (e *Engine) SendSMS(phoneNumber, message, uuid string, dontSendAckRequest b
 	// Post the request to the Twilio API
 	body := *strings.NewReader(u.Encode())
 	client := &http.Client{}
-	req, _ := http.NewRequest("POST", fmt.Sprint(e.Config.Twilio.APIBaseURL, e.Config.Twilio.AccountSID, "/Messages.json"), &body)
-	req.SetBasicAuth(e.Config.Twilio.AccountSID, e.Config.Twilio.AuthToken)
+	req, _ := http.NewRequest("POST", fmt.Sprint(e.Config.Integrations.Twilio.APIBaseURL, e.Config.Integrations.Twilio.AccountSID, "/Messages.json"), &body)
+	req.SetBasicAuth(e.Config.Integrations.Twilio.AccountSID, e.Config.Integrations.Twilio.AuthToken)
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
@@ -103,7 +103,7 @@ func (e *Engine) MakePhoneCall(phoneNumber, message, uuid string) {
 
 	// Build a form that we'll POST to the Twilio API to initiate a phone call
 	u := url.Values{}
-	u.Set("From", e.Config.Twilio.CallFromNumber)
+	u.Set("From", e.Config.Integrations.Twilio.CallFromNumber)
 	u.Set("To", phoneNumber)
 	u.Set("Url", fmt.Sprint(e.Config.Service.CallbackURLBase, "/", uuid, "/twiml/notify"))
 	// Optional status callbacks are enabled below...
@@ -117,8 +117,8 @@ func (e *Engine) MakePhoneCall(phoneNumber, message, uuid string) {
 
 	// Send our form to Twilio
 	client := &http.Client{}
-	req, _ := http.NewRequest("POST", fmt.Sprint(e.Config.Twilio.APIBaseURL, e.Config.Twilio.AccountSID, "/Calls.json"), &body)
-	req.SetBasicAuth(e.Config.Twilio.AccountSID, e.Config.Twilio.AuthToken)
+	req, _ := http.NewRequest("POST", fmt.Sprint(e.Config.Integrations.Twilio.APIBaseURL, e.Config.Integrations.Twilio.AccountSID, "/Calls.json"), &body)
+	req.SetBasicAuth(e.Config.Integrations.Twilio.AccountSID, e.Config.Integrations.Twilio.AuthToken)
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 

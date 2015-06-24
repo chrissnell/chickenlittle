@@ -1,4 +1,10 @@
-package main
+package config
+
+import (
+	"io/ioutil"
+
+	"gopkg.in/yaml.v2"
+)
 
 type Config struct {
 	Service      ServiceConfig `yaml:"service"`
@@ -50,4 +56,17 @@ type VictorOps struct {
 type HipChat struct {
 	HipChatAuthToken    string `yaml:"hipchat_auth_token"`
 	HipChatAnnounceRoom string `yaml:"hipchat_announce_room"`
+}
+
+func New(filename string) (Config, error) {
+	cfgFile, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return Config{}, err
+	}
+	c := Config{}
+	err = yaml.Unmarshal(cfgFile, &c)
+	if err != nil {
+		return Config{}, err
+	}
+	return c, nil
 }

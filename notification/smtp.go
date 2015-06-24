@@ -1,4 +1,4 @@
-package ne
+package notification
 
 import (
 	"fmt"
@@ -14,12 +14,12 @@ func (e *Engine) SendEmailSMTP(address, subject, plain, html string) {
 	// Set up authentication information
 	auth := smtp.PlainAuth(
 		"",
-		e.Config.SMTP.Login,
-		e.Config.SMTP.Password,
-		e.Config.SMTP.Hostname,
+		e.Config.Integrations.SMTP.Login,
+		e.Config.Integrations.SMTP.Password,
+		e.Config.Integrations.SMTP.Hostname,
 	)
 
-	from := mail.Address{Address: e.Config.SMTP.Sender}
+	from := mail.Address{Address: e.Config.Integrations.SMTP.Sender}
 	to := mail.Address{Address: address}
 	headers := mail.Header{}
 	headers["Date"] = []string{time.Now().Format(time.RFC822Z)}
@@ -34,7 +34,7 @@ func (e *Engine) SendEmailSMTP(address, subject, plain, html string) {
 	}
 
 	// Connect to the server, auth and send
-	host := fmt.Sprintf("%s:%d", e.Config.SMTP.Hostname, e.Config.SMTP.Port)
+	host := fmt.Sprintf("%s:%d", e.Config.Integrations.SMTP.Hostname, e.Config.Integrations.SMTP.Port)
 	err := gophermail.SendMail(
 		host,
 		auth,

@@ -1,4 +1,4 @@
-package ne
+package notification
 
 import (
 	"testing"

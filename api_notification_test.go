@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chrissnell/chickenlittle/ne"
+	"github.com/chrissnell/chickenlittle/notification"
 )
 
 const testCreateNotificationJson = `
@@ -38,8 +38,7 @@ func TestNotification(t *testing.T) {
 	defer c.DB.Close()
 
 	// The notification engine must be running, or we'll run into an deadlock
-	neConfig := ne.Config{}
-	c.Notify = ne.New(neConfig)
+	c.Notify = notification.New(c.Config)
 
 	// prepare the API router
 	router := apiRouter()
