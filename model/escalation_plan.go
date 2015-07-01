@@ -10,9 +10,9 @@ import (
 // not respond in time.  It consists of a series of EscalationSteps that are
 // taken, in series, until a team alert is acknowledged
 type EscalationPlan struct {
-	Name        string           `json:"name"`
-	Description string           `json:"description"`
-	Steps       []EscalationStep `json:"escalation_steps,omitempty"`
+	Name        string           `json:"name"`                       // the name of this escalation plan, SHOULD match an existing team
+	Description string           `json:"description"`                // the (optional) human-readable description of this plan
+	Steps       []EscalationStep `json:"escalation_steps,omitempty"` // the escalation steps to take when executing this plan
 }
 
 // Marshal implements the json Encoder interface

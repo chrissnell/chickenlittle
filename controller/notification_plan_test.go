@@ -11,13 +11,13 @@ const testCreateNotificationPlanJSON = `
 [
   {
     "method": "noop://2108675309",
-    "notify_every_period": 0,
-    "notify_until_period": 300000000000
+    "notify_every_period": 1000000000,
+    "notify_until_period": 3000000000
   },
   {
     "method": "noop://2105551212",
-    "notify_every_period": 900000000000,
-    "notify_until_period": 0
+    "notify_every_period": 1000000000,
+    "notify_until_period": 3000000000
   }
 ]
 `
@@ -26,12 +26,13 @@ const testUpdateNotificationPlanJSON = `
 [
   {
     "method": "noop://2108675309",
-    "notify_every_period": 0,
-    "notify_until_period": 300000000000
+    "notify_every_period": 1000000000,
+    "notify_until_period": 3000000000
   }
 ]
 `
 
+// TestNotificationPlan will test the basic CRUD functionality for an notification plan
 func TestNotificationPlan(t *testing.T) {
 	var w *httptest.ResponseRecorder
 	var r *http.Request

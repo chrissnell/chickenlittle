@@ -44,6 +44,7 @@ integrations:
     sender: 'mailer@example.com'
 `
 
+// TestCL is a special ChieckLittle client for testing
 type TestCL struct {
 	Config  config.Config
 	D       *db.DB
@@ -77,16 +78,16 @@ func NewTestCL() (*TestCL, error) {
 	// create notification engine instance
 	n := notification.New(c)
 
-	// create API instance
+	// create controller instance
 	a := New(c, m, n)
 
 	// create the test client
 	cl := &TestCL{
 		Config:  c,
 		D:       d,
-		N:       n,
 		A:       a,
 		M:       m,
+		N:       n,
 		tempdir: tempdir,
 	}
 	return cl, nil
@@ -98,6 +99,7 @@ func (c *TestCL) Close() {
 	_ = os.RemoveAll(c.tempdir)
 }
 
+// TestAPI will only ensure we can create an test client with API, model, db, et. al.
 func TestAPI(t *testing.T) {
 	cl, err := NewTestCL()
 	if err != nil {
@@ -105,5 +107,4 @@ func TestAPI(t *testing.T) {
 	}
 	defer cl.Close()
 
-	// this test only ensure we can create an test client with API, model, db, et. al.
 }

@@ -11,11 +11,12 @@ import (
 
 const testCreateNotificationJSON = `
 {
-  "content": "Hello World",
+  "content": "Hello World"
 }
 `
 
-func TestNotification(t *testing.T) {
+// TestNotification will test notification of a single person
+func TestPersonNotification(t *testing.T) {
 	var w *httptest.ResponseRecorder
 	var r *http.Request
 	var p *bytes.Buffer
@@ -77,7 +78,7 @@ func TestNotification(t *testing.T) {
 	}
 	uuid := resp.UUID
 	if resp.Error != "" {
-		t.Fatalf("Notification Error: %s", resp.Error)
+		t.Errorf("Notification Error: %s", resp.Error)
 	}
 	t.Logf("UUID: %s", uuid)
 	// we need to give the NotificationEndine some time to pick up the notification job
@@ -95,7 +96,7 @@ func TestNotification(t *testing.T) {
 		t.Errorf("StopNotification request failed: %d", w.Code)
 	}
 
-	// Test NotifyPerson: POST /people/lancelot/notify
+	// now enqueue another notification for the same person. this should get another uuid.
 	w = httptest.NewRecorder()
 	p = bytes.NewBufferString(testCreateNotificationJSON)
 	r, err = http.NewRequest("POST", "http://localhost/people/lancelot/notify", p)
@@ -134,5 +135,4 @@ func TestNotification(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("StopNotificationClick request failed: %d - %s", w.Code, w.Body)
 	}
-
 }

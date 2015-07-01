@@ -33,7 +33,7 @@ type SMSResponse struct {
 
 // SendSMS sends an SMS text message to a phone number using the Twilio API,
 // optionally including a method for acknowledging receipt of the message.
-func (e *Engine) SendSMS(phoneNumber, message, uuid string, dontSendAckRequest bool) {
+func (e *Engine) SendSMS(phoneNumber, message, uuid string, dontSendAckRequest bool) error {
 	var cr SMSResponse
 
 	if uuid != "" {
@@ -66,7 +66,7 @@ func (e *Engine) SendSMS(phoneNumber, message, uuid string, dontSendAckRequest b
 	// Post the request to the Twilio API
 	body := *strings.NewReader(u.Encode())
 	client := &http.Client{}
-	req, _ := http.NewRequest("POST", fmt.Sprint(e.Config.Integrations.Twilio.APIBaseURL, e.Config.Integrations.Twilio.AccountSID, "/Messages.json"), &body)
+	req, _ := http.NewRequest("POST", fmt.Sprint(e.Config.Integrations.Twilio.APIBaseURL, "/", e.Config.Integrations.Twilio.AccountSID, "/Messages.json"), &body)
 	req.SetBasicAuth(e.Config.Integrations.Twilio.AccountSID, e.Config.Integrations.Twilio.AuthToken)
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -74,6 +74,7 @@ func (e *Engine) SendSMS(phoneNumber, message, uuid string, dontSendAckRequest b
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("SendSMS() Request error:", err)
+		return err
 	}
 
 	// Get the response
@@ -83,6 +84,7 @@ func (e *Engine) SendSMS(phoneNumber, message, uuid string, dontSendAckRequest b
 	err = json.Unmarshal(b, &cr)
 	if err != nil {
 		log.Fatalln("SendSMS() Error unmarshalling JSON:", err)
+		return err
 	}
 
 	if uuid != "" {
@@ -93,11 +95,12 @@ func (e *Engine) SendSMS(phoneNumber, message, uuid string, dontSendAckRequest b
 		e.SetConversation(conversationKey, uuid)
 	}
 
+	return nil
 }
 
 // MakePhoneCall makes a phone call to a phone number using the Twilio API.  Sends Twilio a URL for
 // retrieving the TwiML that defines the interaction in the call.
-func (e *Engine) MakePhoneCall(phoneNumber, message, uuid string) {
+func (e *Engine) MakePhoneCall(phoneNumber, message, uuid string) error {
 	var cr map[string]interface{}
 
 	log.Println("[", uuid, "] Calling", phoneNumber, "with message:", message)
@@ -137,4 +140,5 @@ func (e *Engine) MakePhoneCall(phoneNumber, message, uuid string) {
 		log.Fatalln("MakePhoneCall() Error unmarshalling JSON:", err)
 	}
 
+	return nil
 }

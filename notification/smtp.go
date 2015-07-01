@@ -2,7 +2,6 @@ package notification
 
 import (
 	"fmt"
-	"log"
 	"net/mail"
 	"net/smtp"
 	"time"
@@ -11,7 +10,7 @@ import (
 )
 
 // SendEmailSMTP will send an email via SMTP
-func (e *Engine) SendEmailSMTP(address, subject, plain, html string) {
+func (e *Engine) SendEmailSMTP(address, subject, plain, html string) error {
 	// Set up authentication information
 	auth := smtp.PlainAuth(
 		"",
@@ -41,7 +40,5 @@ func (e *Engine) SendEmailSMTP(address, subject, plain, html string) {
 		auth,
 		message,
 	)
-	if err != nil {
-		log.Println("SMTP-Error:", err)
-	}
+	return err
 }

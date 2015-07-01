@@ -50,6 +50,7 @@ const testUpdateTeamJSON = `
 }
 `
 
+// TestTeam will create basic CRUD functionality of a team
 func TestTeam(t *testing.T) {
 	var w *httptest.ResponseRecorder
 	var r *http.Request

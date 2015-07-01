@@ -21,6 +21,7 @@ const testUpdatePersonJSON = `
 }
 `
 
+// TestPerson will test the basic CRUD functionality of a person
 func TestPerson(t *testing.T) {
 	var w *httptest.ResponseRecorder
 	var r *http.Request

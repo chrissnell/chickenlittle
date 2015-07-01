@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/url"
+
+	"github.com/twinj/uuid"
 )
 
 // Person holds a single person. A Person can be part of a team or being notified directly, if it has an notification plan.
@@ -89,4 +92,58 @@ func (m *Model) DeletePerson(p string) error {
 	}
 
 	return nil
+}
+
+// getNotificationSteps will return a fully realized (all indirection resolved) notification plan
+// for a single user.
+func (m *Model) getNotificationSteps(username string) ([]NotificationSteper, error) {
+	steps := make([]NotificationSteper, 0, 1)
+	// fetch notification plan from DB
+	np, err := m.GetNotificationPlan(username)
+	if err != nil {
+		return steps, err
+	}
+	for _, step := range np.Steps {
+		url, err := url.Parse(step.Method)
+		if err != nil {
+			log.Println("Skipping invalid notification step for user ", username)
+			continue
+		}
+		ns := &notificationStep{
+			target:      url,
+			repeatAfter: step.NotifyEveryPeriod,
+			repeatUntil: step.NotifyUntilPeriod,
+		}
+		steps = append(steps, ns)
+	}
+	return steps, nil
+}
+
+// GetNotificationForPerson creates a new notificationJob given a person (username), subject and message.
+// A Notification for one person will contain an escalation plan containing exactly one step which
+// consists of the notification steps from the notification plan of this user.
+func (m *Model) GetNotificationForPerson(username string, subject string, message string) (notificationJob, error) {
+	notSteps, err := m.getNotificationSteps(username)
+	if err != nil {
+		return notificationJob{}, err
+	}
+
+	// wrap the notification plan in a dummy escalation plan
+	escStep := &escalationStep{
+		steps: notSteps,
+	}
+	escSteps := make([]EscalationSteper, 0, 1)
+	escSteps = append(escSteps, escStep)
+	// Assign a UUID to this notification. The UUID is used to track notifications-in-progress and to stop
+	// them when requested.
+	uuid.SwitchFormat(uuid.CleanHyphen)
+	n := notificationJob{
+		id:      uuid.NewV4().String(),
+		subject: subject,
+		message: message,
+		steps:   escSteps,
+		stopper: make(chan struct{}),
+	}
+
+	return n, nil
 }

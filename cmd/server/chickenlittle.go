@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/chrissnell/chickenlittle/api"
 	"github.com/chrissnell/chickenlittle/config"
+	"github.com/chrissnell/chickenlittle/controller"
 	"github.com/chrissnell/chickenlittle/db"
 	"github.com/chrissnell/chickenlittle/model"
 	"github.com/chrissnell/chickenlittle/notification"
@@ -18,7 +18,7 @@ type ChickenLittle struct {
 	Config config.Config
 	db     *db.DB
 	notify *notification.Engine
-	api    *api.API
+	api    *controller.Controller
 	model  *model.Model
 }
 
@@ -44,8 +44,8 @@ func New(filename string) *ChickenLittle {
 	// Launch the notification engine
 	c.notify = notification.New(c.Config)
 
-	// Initialize the API
-	c.api = api.New(c.Config, c.model, c.notify)
+	// Initialize the Controller
+	c.api = controller.New(c.Config, c.model, c.notify)
 
 	return c
 }

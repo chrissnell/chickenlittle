@@ -79,3 +79,10 @@ func New(filename string) (Config, error) {
 	}
 	return c, nil
 }
+
+// NewDefault creates valid default config.
+func NewDefault() Config {
+	c := Config{}
+	// TODO fill in sane default values
+	return c
+}

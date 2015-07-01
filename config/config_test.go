@@ -39,6 +39,7 @@ integrations:
     sender: 'mailer@example.com'
 `
 
+// TestConfig ensures that we can unmarshall the example config.
 func TestConfig(t *testing.T) {
 	// create tempdir for fs based tests
 	tempdir, _ := ioutil.TempDir(os.TempDir(), "chickenlittle-tests-")

@@ -4,18 +4,11 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/twinj/uuid"
 )
-
-// NotifyPersonRequest is the JSON request sent by a client to trigger
-// the notification of a single person.
-type NotifyPersonRequest struct {
-	Content string `json:"content"`
-	UUID    string `json:"-"`
-}
 
 // NotifyPersonResponse is the response sent to the client in response
 // to the NotifyPersonRequest.
@@ -30,7 +23,7 @@ type NotifyPersonResponse struct {
 // NotifyPerson notifies a Person by looking up their NotificationPlan and sending it to the person notification engine.
 func (a *Controller) NotifyPerson(w http.ResponseWriter, r *http.Request) {
 	var res NotifyPersonResponse
-	var req NotifyPersonRequest
+	var req NotificationRequest
 
 	vars := mux.Vars(r)
 	username := vars["person"]
@@ -53,31 +46,28 @@ func (a *Controller) NotifyPerson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = json.Unmarshal(body, &req)
+	if err != nil {
+		res.Error = "Error unmarshaling request: " + err.Error()
+		json.NewEncoder(w).Encode(res)
+		return
+	}
 
-	// TODO create an EscalationPlan object here, see notification.NotificationForPerson()
-	//req.Plan, err = a.m.GetNotificationPlan(username)
-	//if err != nil {
-	//	// res.Error = err.Error()
-	//	// errjson, _ := json.Marshal(res)
-	//	http.Error(w, err.Error(), http.StatusNotFound)
-	//	return
-	//}
+	n, err := a.m.GetNotificationForPerson(username, req.Summary, req.Content)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
 
-	// Assign a UUID to this notification.  The UUID is used to track notifications-in-progress (NIP) and to stop
-	// them when requested.
-	uuid.SwitchFormat(uuid.CleanHyphen)
-	req.UUID = uuid.NewV4().String()
-
-	//// Send our NotificationRequest to the notification engine
-	//a.n.EnqueueNotification(&req)
+	// Send our NotificationRequest to the notification engine
+	a.n.EnqueueNotification(&n)
+	log.Printf("Enqueued notification: %v", n)
 
 	res = NotifyPersonResponse{
 		Message:  "Notification initiated",
-		Content:  req.Content,
-		UUID:     req.UUID,
+		Content:  n.Message(),
+		UUID:     n.ID(),
 		Username: username,
 	}
 
 	json.NewEncoder(w).Encode(res)
-
 }

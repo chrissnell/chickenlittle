@@ -6,17 +6,17 @@ import (
 	"sync"
 
 	"github.com/chrissnell/chickenlittle/config"
+	"github.com/chrissnell/chickenlittle/model"
 )
 
 // Engine is the core of the notification engine handling all notifications
 // and feedback handling.
 type Engine struct {
 	Config        config.Config
-	planChan      chan Notification
+	planChan      chan model.Notifier
 	stopChan      chan string
 	mutex         *sync.Mutex // protects all below
-	stoppers      map[string]chan struct{}
-	notifications map[string]Notification
+	notifications map[string]model.Notifier
 	conversations map[string]string
 }
 
@@ -24,11 +24,10 @@ type Engine struct {
 func New(c config.Config) *Engine {
 	ne := &Engine{
 		Config:        c,
-		planChan:      make(chan Notification, 100),
+		planChan:      make(chan model.Notifier, 100),
 		stopChan:      make(chan string, 100),
 		mutex:         &sync.Mutex{},
-		stoppers:      make(map[string]chan struct{}),
-		notifications: make(map[string]Notification),
+		notifications: make(map[string]model.Notifier),
 		conversations: make(map[string]string),
 	}
 	go ne.start()
@@ -94,7 +93,7 @@ func (e *Engine) RemoveConversation(key string) {
 // EnqueueNotification will place a new notification in the
 // notification queue chan. It will eventually be picked up by the embedded
 // worker goroutine and processed in it's own handler.
-func (e *Engine) EnqueueNotification(nr Notification) {
+func (e *Engine) EnqueueNotification(nr model.Notifier) {
 	e.planChan <- nr
 }
 
@@ -107,13 +106,11 @@ func (e *Engine) CancelNotification(uuid string) {
 
 // startNotification will setup a new notification handler for the
 // given notification request and run it in it's own goroutine.
-func (e *Engine) startNotification(nr Notification) {
+func (e *Engine) startNotification(nr model.Notifier) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
 	id := nr.ID()
-	// Create a new stopper channel for this plan
-	e.stoppers[id] = make(chan struct{})
 	// Store the message in the message map
 	e.notifications[id] = nr
 
@@ -127,7 +124,7 @@ func (e *Engine) IsNotification(uuid string) bool {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
-	_, found := e.stoppers[uuid]
+	_, found := e.notifications[uuid]
 	return found
 }
 
@@ -135,16 +132,16 @@ func (e *Engine) IsNotification(uuid string) bool {
 // or silently fail if the uuid is not a running notification.
 func (e *Engine) stopNotification(uuid string) {
 	e.mutex.Lock()
-	defer e.mutex.Unlock()
-
 	// check if there are notifications going for this UUID
-	stopper, found := e.stoppers[uuid]
+	nr, found := e.notifications[uuid]
+	e.mutex.Unlock()
 	if !found {
+		log.Println("[", uuid, "]", "No stop chan found for this notification")
 		return
 	}
 	log.Println("[", uuid, "]", "Sending a stop notification to the plan processor")
 
 	// It's in progress, so we'll send a message on its Stopper to
 	// be received by the goroutine executing the plan
-	stopper <- struct{}{}
+	nr.Stopper() <- struct{}{}
 }

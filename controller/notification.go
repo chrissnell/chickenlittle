@@ -8,6 +8,13 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// NotificationRequest is the JSON request sent by a client to trigger
+// to escalating notification of a whole team. Implements the Notification interface.
+type NotificationRequest struct {
+	Summary string `json:"summary"` // a summary or subject of the notification. Currenlty not used in all integrations. Optional.
+	Content string `json:"content"` // the notification content. mandatory.
+}
+
 // StopNotification stops a notification-in-progress (NIP) by sending the UUID to the notification engine
 func (a *Controller) StopNotification(w http.ResponseWriter, r *http.Request) {
 	var res NotifyPersonResponse

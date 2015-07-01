@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/url"
+
+	"github.com/twinj/uuid"
 )
 
 // Team contains a team of people with a defined rotations policy and an escalation plan
@@ -91,4 +94,101 @@ func (m *Model) DeleteTeam(t string) error {
 	}
 
 	return nil
+}
+
+// getEscalationSteps will return a fully realized (all indirections resolved) notification plan
+// for a team.
+func (m *Model) getEscalationSteps(name string) ([]EscalationSteper, error) {
+	escSteps := make([]EscalationSteper, 0, 1)
+	// fetch escalation plan and team from db
+	escPlan, err := m.GetEscalationPlan(name)
+	if err != nil {
+		return escSteps, err
+	}
+	team, err := m.GetTeam(name)
+	if err != nil {
+		return escSteps, err
+	}
+	curMember := 0
+	// iterate over esc plan and create a step for every step
+STEPS:
+	for n, step := range escPlan.Steps {
+		es := &escalationStep{}
+		switch step.Method {
+		case NotifyOnDuty:
+			ns, err := m.getNotificationSteps(team.Members[0])
+			if err != nil {
+				log.Printf("Error constructing escalation plan for %s in step %d: %s", name, n, err)
+				continue STEPS
+			}
+			es.steps = ns
+		case NotifyNextInRotation:
+			curMember++
+			if curMember >= len(team.Members) {
+				log.Printf("No more team members available while constructing escalation plan for %s in step %d", name, n)
+				continue STEPS
+			}
+			ns, err := m.getNotificationSteps(team.Members[curMember])
+			if err != nil {
+				log.Printf("Error constructing escalation plan for %s in step %d: %s", name, n, err)
+				continue STEPS
+			}
+			es.steps = ns
+		case NotifyOtherPerson:
+			ns, err := m.getNotificationSteps(step.Target)
+			if err != nil {
+				log.Printf("Error constructing escalation plan for %s in step %d: %s", name, n, err)
+				continue STEPS
+			}
+			es.steps = ns
+		case NotifyWebhook:
+			u, err := url.Parse(step.Target)
+			if err != nil {
+				log.Printf("Error constructing escalation plan for %s in step %d: %s", name, n, err)
+				continue STEPS
+			}
+			s := &notificationStep{
+				target: u,
+			}
+			es.steps = []NotificationSteper{s}
+		case NotifyEmail:
+			u, err := url.Parse("mailto://" + step.Target)
+			if err != nil {
+				log.Printf("Error constructing escalation plan for %s in step %d: %s", name, n, err)
+				continue STEPS
+			}
+			s := &notificationStep{
+				target: u,
+			}
+			es.steps = []NotificationSteper{s}
+		default:
+			log.Println("Unknown escalation method:", step.Method)
+			continue STEPS
+		}
+		escSteps = append(escSteps, es)
+	}
+	return escSteps, nil
+}
+
+// GetNotificationForTeam will creates a new notificationJob given a team, subject and message.
+// A Notification for a team will contain an escalation plan containing multiple escalation steps
+// acording to this teams escalation plan. Each step may constist of one or more notification steps,
+// depending on the notification method.
+func (m *Model) GetNotificationForTeam(name, subject, message string) (notificationJob, error) {
+	escSteps, err := m.getEscalationSteps(name)
+	if err != nil {
+		return notificationJob{}, err
+	}
+	// Assign a UUID to this notification. The UUID is used to track notifications-in-progress and to stop
+	// them when requested.
+	uuid.SwitchFormat(uuid.CleanHyphen)
+	n := notificationJob{
+		id:      uuid.NewV4().String(),
+		subject: subject,
+		message: message,
+		steps:   escSteps,
+		stopper: make(chan struct{}),
+	}
+
+	return n, nil
 }

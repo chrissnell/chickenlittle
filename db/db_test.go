@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// TestDB tests all basic DB methods
 func TestDB(t *testing.T) {
 	// create tempdir for fs based tests
 	tempdir, _ := ioutil.TempDir(os.TempDir(), "chickenlittle-tests-")

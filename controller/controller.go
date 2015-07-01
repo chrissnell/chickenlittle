@@ -7,14 +7,14 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// API contains the HTTP API with all necessary dependencies
+// Controller contains the HTTP controller with all necessary dependencies
 type Controller struct {
 	c config.Config
 	m *model.Model
 	n *notification.Engine
 }
 
-// New will create a new API
+// New will create a new Controller
 func New(config config.Config, model *model.Model, eng *notification.Engine) *Controller {
 	a := &Controller{
 		c: config,

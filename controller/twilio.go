@@ -25,12 +25,15 @@ func (a *Controller) ReceiveSMSReply(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Println("ReceiveSMSReply() r.ParseForm() error:", err)
+		http.Error(w, "", http.StatusInternalServerError)
+		return
 	}
 
 	// We should have a "From" parameter being passed from Twilio
 	recipient := r.FormValue("From")
 	if recipient == "" {
 		log.Println("ReceiveSMSReply() error: 'From' parameter was not provided in response")
+		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 
@@ -41,6 +44,8 @@ func (a *Controller) ReceiveSMSReply(w http.ResponseWriter, r *http.Request) {
 	uuid, err := a.n.GetConversation(conversationKey)
 	if err != nil {
 		a.n.SendSMS(recipient, "I'm sorry but I don't recognize that response.   Please acknowledge with the three-digit code from the notfication you received.", "", true)
+		http.Error(w, "", http.StatusNotFound)
+		return
 	}
 	log.Println("[", uuid, "]", "Recieved a SMS reply from", recipient, ":", r.FormValue("Body"))
 
