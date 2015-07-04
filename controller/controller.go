@@ -4,6 +4,7 @@ import (
 	"github.com/chrissnell/chickenlittle/config"
 	"github.com/chrissnell/chickenlittle/model"
 	"github.com/chrissnell/chickenlittle/notification"
+	"github.com/chrissnell/chickenlittle/rotation"
 	"github.com/gorilla/mux"
 )
 
@@ -12,14 +13,16 @@ type Controller struct {
 	c config.Config
 	m *model.Model
 	n *notification.Engine
+	r *rotation.Engine
 }
 
 // New will create a new Controller
-func New(config config.Config, model *model.Model, eng *notification.Engine) *Controller {
+func New(config config.Config, model *model.Model, eng *notification.Engine, rot *rotation.Engine) *Controller {
 	a := &Controller{
 		c: config,
 		m: model,
 		n: eng,
+		r: rot,
 	}
 	return a
 }
@@ -47,6 +50,16 @@ func (a *Controller) APIRouter() *mux.Router {
 	apiRouter.HandleFunc("/teams/{team}", a.ShowTeam).Methods("GET")
 	apiRouter.HandleFunc("/teams/{team}", a.DeleteTeam).Methods("DELETE")
 	apiRouter.HandleFunc("/teams/{team}", a.UpdateTeam).Methods("PUT")
+
+	apiRouter.HandleFunc("/escalation/{plan}", a.CreateEscalationPlan).Methods("POST")
+	apiRouter.HandleFunc("/escalation/{plan}", a.ShowEscalationPlan).Methods("GET")
+	apiRouter.HandleFunc("/escalation/{plan}", a.DeleteEscalationPlan).Methods("DELETE")
+	apiRouter.HandleFunc("/escalation/{plan}", a.UpdateEscalationPlan).Methods("PUT")
+
+	apiRouter.HandleFunc("/rotation/{plan}", a.CreateRotationPolicy).Methods("POST")
+	apiRouter.HandleFunc("/rotation/{plan}", a.ShowRotationPolicy).Methods("GET")
+	apiRouter.HandleFunc("/rotation/{plan}", a.DeleteRotationPolicy).Methods("DELETE")
+	apiRouter.HandleFunc("/rotation/{plan}", a.UpdateRotationPolicy).Methods("PUT")
 
 	return apiRouter
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/chrissnell/chickenlittle/db"
 	"github.com/chrissnell/chickenlittle/model"
 	"github.com/chrissnell/chickenlittle/notification"
+	"github.com/chrissnell/chickenlittle/rotation"
 )
 
 // ChickenLittle contains the notification service server
@@ -44,8 +45,11 @@ func New(filename string) *ChickenLittle {
 	// Launch the notification engine
 	c.notify = notification.New(c.Config)
 
+	// Launch the rotation engine
+	r := rotation.New(c.model)
+
 	// Initialize the Controller
-	c.api = controller.New(c.Config, c.model, c.notify)
+	c.api = controller.New(c.Config, c.model, c.notify, r)
 
 	return c
 }

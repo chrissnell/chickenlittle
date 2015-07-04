@@ -9,6 +9,7 @@ import (
 	"github.com/chrissnell/chickenlittle/db"
 	"github.com/chrissnell/chickenlittle/model"
 	"github.com/chrissnell/chickenlittle/notification"
+	"github.com/chrissnell/chickenlittle/rotation"
 )
 
 const testConfigYAML = `
@@ -78,8 +79,11 @@ func NewTestCL() (*TestCL, error) {
 	// create notification engine instance
 	n := notification.New(c)
 
+	// create rotation engine instance
+	r := rotation.New(m)
+
 	// create controller instance
-	a := New(c, m, n)
+	a := New(c, m, n, r)
 
 	// create the test client
 	cl := &TestCL{

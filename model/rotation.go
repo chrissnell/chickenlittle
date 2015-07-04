@@ -10,7 +10,7 @@ import (
 // RotationPolicy defines how shifts are rotated. If the frequency is zero
 // no automatic rotations should be attempted.
 type RotationPolicy struct {
-	UUID              string        `yaml:"uuid" json:"uuid"`
+	Name              string        `yaml:"name" json:"name"`
 	Description       string        `yaml:"description" json:"description"`
 	RotationFrequency time.Duration `yaml:"frequency" json:"frequency"`
 	RotateTime        time.Time     `yaml:"time" json:"time"`
@@ -29,10 +29,10 @@ func (rp *RotationPolicy) Unmarshal(jrp string) error {
 }
 
 // GetRotationPolicy will fetch a Rotation Policy from the DB
-func (m *Model) GetRotationPolicy(uuid string) (*RotationPolicy, error) {
-	jrp, err := m.db.Fetch("rotationpolicies", uuid)
+func (m *Model) GetRotationPolicy(name string) (*RotationPolicy, error) {
+	jrp, err := m.db.Fetch("rotationpolicies", name)
 	if err != nil {
-		return nil, fmt.Errorf("Could not fetch rotation policy %v from DB", uuid)
+		return nil, fmt.Errorf("Could not fetch rotation policy %v from DB", name)
 	}
 
 	policy := &RotationPolicy{}
@@ -76,9 +76,9 @@ func (m *Model) StoreRotationPolicy(rp *RotationPolicy) error {
 		return fmt.Errorf("Could not marshal rotation policy %+v", rp)
 	}
 
-	// Note: the UUID needs to be generated at time of creation.  Do we generate it
+	// Note: the name needs to be generated at time of creation.  Do we generate it
 	//       in this file or do we generate it as part of the rotation policy API?
-	err = m.db.Store("rotationpolicies", rp.UUID, string(jrp))
+	err = m.db.Store("rotationpolicies", rp.Name, string(jrp))
 	if err != nil {
 		return err
 	}
@@ -87,8 +87,8 @@ func (m *Model) StoreRotationPolicy(rp *RotationPolicy) error {
 }
 
 // DeleteRotationPolicy will delete a Rotation Policy from the DB
-func (m *Model) DeleteRotationPolicy(uuid string) error {
-	err := m.db.Delete("rotationpolicies", uuid)
+func (m *Model) DeleteRotationPolicy(name string) error {
+	err := m.db.Delete("rotationpolicies", name)
 	if err != nil {
 		return err
 	}

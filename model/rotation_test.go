@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/chrissnell/chickenlittle/db"
-	"github.com/twinj/uuid"
 )
 
 func TestRotation(t *testing.T) {
@@ -25,13 +24,11 @@ func TestRotation(t *testing.T) {
 	// create a model
 	m := New(db)
 
-	// create a random UUID for the test policy
-	uuid.SwitchFormat(uuid.CleanHyphen)
-	id := uuid.NewV4().String()
+	id := "testpolicy"
 
 	// create a new rotation policy
 	rp := RotationPolicy{
-		UUID:              id,
+		Name:              id,
 		Description:       "Example rotation policy",
 		RotationFrequency: time.Second,
 		RotateTime:        time.Now(),
