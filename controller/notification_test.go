@@ -47,7 +47,7 @@ func TestPersonNotification(t *testing.T) {
 	// Create a notification plan
 	w = httptest.NewRecorder()
 	p = bytes.NewBufferString(testCreateNotificationPlanJSON)
-	r, err = http.NewRequest("POST", "http://localhost/plan/lancelot", p)
+	r, err = http.NewRequest("POST", "http://localhost/plan", p)
 	if err != nil {
 		t.Fatalf("Failed to create new HTTP Request: %s", err)
 	}

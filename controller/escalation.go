@@ -22,7 +22,7 @@ func (a *Controller) ShowEscalationPlan(w http.ResponseWriter, r *http.Request) 
 	var res EscalationPlanResponse
 
 	vars := mux.Vars(r)
-	name := vars["name"]
+	name := vars["plan"]
 
 	p, err := a.m.GetEscalationPlan(name)
 	if err != nil {
@@ -41,7 +41,7 @@ func (a *Controller) DeleteEscalationPlan(w http.ResponseWriter, r *http.Request
 	var res EscalationPlanResponse
 
 	vars := mux.Vars(r)
-	name := vars["name"]
+	name := vars["plan"]
 
 	p, err := a.m.GetEscalationPlan(name)
 	if p == nil {
@@ -140,7 +140,7 @@ func (a *Controller) UpdateEscalationPlan(w http.ResponseWriter, r *http.Request
 	var p model.EscalationPlan
 
 	vars := mux.Vars(r)
-	name := vars["name"]
+	name := vars["plan"]
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*10))
 	// If something went wrong, return an error in the JSON response

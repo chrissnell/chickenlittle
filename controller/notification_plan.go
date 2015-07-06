@@ -74,10 +74,7 @@ func (a *Controller) DeleteNotificationPlan(w http.ResponseWriter, r *http.Reque
 // CreateNotificationPlan creates a NotificationPlan for a Person
 func (a *Controller) CreateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 	var res NotificationPlanResponse
-	var p []model.NotificationStep
-
-	vars := mux.Vars(r)
-	username := vars["person"]
+	var p model.NotificationPlan
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
@@ -106,7 +103,7 @@ func (a *Controller) CreateNotificationPlan(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if username == "" {
+	if p.Username == "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		res.Error = "Must provide username in URL"
@@ -114,11 +111,11 @@ func (a *Controller) CreateNotificationPlan(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	fp, err := a.m.GetPerson(username)
+	fp, err := a.m.GetPerson(p.Username)
 	if fp != nil && fp.Username == "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = fmt.Sprint("User ", username, " does not exist. Create the user first before adding a notification plan for them.")
+		res.Error = fmt.Sprint("User ", p.Username, " does not exist. Create the user first before adding a notification plan for them.")
 		json.NewEncoder(w).Encode(res)
 		return
 	}
@@ -127,7 +124,7 @@ func (a *Controller) CreateNotificationPlan(w http.ResponseWriter, r *http.Reque
 	}
 
 	// The NotificationPlan provided must have at least one NotificationStep
-	if len(p) == 0 {
+	if len(p.Steps) == 0 {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		res.Error = "Must provide at least one notification step in JSON"
@@ -135,21 +132,19 @@ func (a *Controller) CreateNotificationPlan(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	np, err := a.m.GetNotificationPlan(username)
+	np, err := a.m.GetNotificationPlan(p.Username)
 	if np != nil && np.Username != "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = fmt.Sprint("Notification plan for user ", username, " already exists. Use PUT /plan/", username, " to update..")
+		res.Error = fmt.Sprint("Notification plan for user ", p.Username, " already exists. Use PUT /plan/", p.Username, " to update..")
 		json.NewEncoder(w).Encode(res)
 		return
 	}
 	if err != nil {
-		log.Println("GetNotificationPlan() failed for", username)
+		log.Println("GetNotificationPlan() failed for", p.Username)
 	}
 
-	plan := model.NotificationPlan{Username: username, Steps: p}
-
-	err = a.m.StoreNotificationPlan(&plan)
+	err = a.m.StoreNotificationPlan(&p)
 	if err != nil {
 		log.Println("Error storing notification plan:", err)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -159,7 +154,7 @@ func (a *Controller) CreateNotificationPlan(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	res.Message = fmt.Sprint("Notification plan for user ", username, " created")
+	res.Message = fmt.Sprint("Notification plan for user ", p.Username, " created")
 
 	json.NewEncoder(w).Encode(res)
 }
@@ -167,7 +162,7 @@ func (a *Controller) CreateNotificationPlan(w http.ResponseWriter, r *http.Reque
 // UpdateNotificationPlan updates an NotificationPlan for a Person
 func (a *Controller) UpdateNotificationPlan(w http.ResponseWriter, r *http.Request) {
 	var res NotificationPlanResponse
-	var p []model.NotificationStep
+	var p model.NotificationPlan
 
 	vars := mux.Vars(r)
 	username := vars["person"]
@@ -217,7 +212,7 @@ func (a *Controller) UpdateNotificationPlan(w http.ResponseWriter, r *http.Reque
 	}
 
 	// The NotificationPlan provided must have at least one NotificationStep
-	if len(p) == 0 {
+	if len(p.Steps) == 0 {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		res.Error = "Must provide at least one notification step in JSON"
@@ -237,13 +232,14 @@ func (a *Controller) UpdateNotificationPlan(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Replace the NotificationSteps of the fetched plan with those from this request
-	np.Steps = p
+	np.Steps = p.Steps
 
 	err = a.m.StoreNotificationPlan(np)
 	if err != nil {
 		log.Println("Error storing notification plan:", err)
 		w.WriteHeader(422) // unprocessable entity
 		res.Error = err.Error()
+		log.Println(res.Error)
 		json.NewEncoder(w).Encode(res)
 		return
 	}

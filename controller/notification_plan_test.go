@@ -8,28 +8,36 @@ import (
 )
 
 const testCreateNotificationPlanJSON = `
-[
-  {
-    "method": "noop://2108675309",
-    "notify_every_period": 1000000000,
-    "notify_until_period": 3000000000
-  },
-  {
-    "method": "noop://2105551212",
-    "notify_every_period": 1000000000,
-    "notify_until_period": 3000000000
-  }
-]
+{
+	"username": "lancelot",
+	"steps":
+		[
+		  {
+		    "method": "noop://2108675309",
+		    "notify_every_period": 1000000000,
+		    "notify_until_period": 3000000000
+		  },
+		  {
+		    "method": "noop://2105551212",
+		    "notify_every_period": 1000000000,
+		    "notify_until_period": 3000000000
+		  }
+		]
+}
 `
 
 const testUpdateNotificationPlanJSON = `
-[
-  {
-    "method": "noop://2108675309",
-    "notify_every_period": 1000000000,
-    "notify_until_period": 3000000000
-  }
-]
+{
+	"username": "foobar",
+	"steps":
+		[
+		  {
+		    "method": "noop://2108675309",
+		    "notify_every_period": 1000000000,
+		    "notify_until_period": 3000000000
+		  }
+		]
+}
 `
 
 // TestNotificationPlan will test the basic CRUD functionality for an notification plan
@@ -58,20 +66,20 @@ func TestNotificationPlan(t *testing.T) {
 	router.ServeHTTP(w, r)
 	// verify response
 	if w.Code != 200 {
-		t.Fatalf("CreatePerson request failed")
+		t.Fatalf("CreatePerson request failed: %d", w.Code)
 	}
 
 	// Test CreateNotificationPlan: POST /plan/{{username}}
 	w = httptest.NewRecorder()
 	p = bytes.NewBufferString(testCreateNotificationPlanJSON)
-	r, err = http.NewRequest("POST", "http://localhost/plan/lancelot", p)
+	r, err = http.NewRequest("POST", "http://localhost/plan", p)
 	if err != nil {
 		t.Fatalf("Failed to create new HTTP Request: %s", err)
 	}
 	router.ServeHTTP(w, r)
 	// verify response
 	if w.Code != 200 {
-		t.Errorf("CreateNotificationPlan request failed")
+		t.Errorf("CreateNotificationPlan request failed: %d", w.Code)
 	}
 
 	// Test ShowNotificationPlan: GET /plan/lancelot
@@ -83,7 +91,7 @@ func TestNotificationPlan(t *testing.T) {
 	router.ServeHTTP(w, r)
 	// verify response
 	if w.Code != 200 {
-		t.Errorf("ShowNotificationPlan request failed")
+		t.Errorf("ShowNotificationPlan request failed: %d", w.Code)
 	}
 
 	// Test UpdateNotificaitonPlan: PUT /plan/lancelot
@@ -96,7 +104,7 @@ func TestNotificationPlan(t *testing.T) {
 	router.ServeHTTP(w, r)
 	// verify response
 	if w.Code != 200 {
-		t.Errorf("UpdateNotificationPlan request failed")
+		t.Errorf("UpdateNotificationPlan request failed: %d", w.Code)
 	}
 
 	// Test DeleteNotificationPlan: DELETE /plan/lancelot
@@ -108,7 +116,7 @@ func TestNotificationPlan(t *testing.T) {
 	router.ServeHTTP(w, r)
 	// verify response
 	if w.Code != 200 {
-		t.Errorf("DeleteNotificationPlan request failed")
+		t.Errorf("DeleteNotificationPlan request failed: %d", w.Code)
 	}
 
 }

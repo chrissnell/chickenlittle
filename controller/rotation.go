@@ -22,7 +22,7 @@ func (a *Controller) ShowRotationPolicy(w http.ResponseWriter, r *http.Request) 
 	var res RotationPolicyResponse
 
 	vars := mux.Vars(r)
-	name := vars["name"]
+	name := vars["policy"]
 
 	p, err := a.m.GetRotationPolicy(name)
 	if err != nil {
@@ -41,7 +41,7 @@ func (a *Controller) DeleteRotationPolicy(w http.ResponseWriter, r *http.Request
 	var res RotationPolicyResponse
 
 	vars := mux.Vars(r)
-	name := vars["name"]
+	name := vars["policy"]
 
 	p, err := a.m.GetRotationPolicy(name)
 	if p == nil {
@@ -97,7 +97,7 @@ func (a *Controller) CreateRotationPolicy(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// If a ame was not provided, return an error
+	// If a name was not provided, return an error
 	if p.Name == "" { // TODO further checks
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
@@ -111,7 +111,7 @@ func (a *Controller) CreateRotationPolicy(w http.ResponseWriter, r *http.Request
 	if fp != nil && fp.Name != "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = fmt.Sprint("Escalation policy ", p.Name, " already exists. Use PUT /policy/", p.Name, " to update.")
+		res.Error = fmt.Sprint("Escalation policy ", p.Name, " already exists. Use PUT /rotation/", p.Name, " to update.")
 		json.NewEncoder(w).Encode(res)
 		return
 	}
@@ -130,7 +130,7 @@ func (a *Controller) CreateRotationPolicy(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	res.Message = fmt.Sprint("Pla ", p.Name, " created")
+	res.Message = fmt.Sprint("Plan ", p.Name, " created")
 
 	json.NewEncoder(w).Encode(res)
 }
@@ -140,7 +140,7 @@ func (a *Controller) UpdateRotationPolicy(w http.ResponseWriter, r *http.Request
 	var p model.RotationPolicy
 
 	vars := mux.Vars(r)
-	name := vars["name"]
+	name := vars["policy"]
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*10))
 	// If something went wrong, return an error in the JSON response
