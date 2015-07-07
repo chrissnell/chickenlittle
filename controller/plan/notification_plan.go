@@ -1,4 +1,4 @@
-package controller
+package plan
 
 import (
 	"encoding/json"
@@ -12,15 +12,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// NotificationPlanResponse is a struct to encode an NotificationPlan as JSON
-type NotificationPlanResponse struct {
-	NotificationPlan model.NotificationPlan `json:"people"`
-	Message          string                 `json:"message"`
-	Error            string                 `json:"error"`
-}
-
 // ShowNotificationPlan returns a JSON-formatted NotificationPlan for a Person
-func (a *Controller) ShowNotificationPlan(w http.ResponseWriter, r *http.Request) {
+func (a *npEndpoint) Show(w http.ResponseWriter, r *http.Request) {
 	var res NotificationPlanResponse
 
 	vars := mux.Vars(r)
@@ -42,7 +35,7 @@ func (a *Controller) ShowNotificationPlan(w http.ResponseWriter, r *http.Request
 }
 
 // DeleteNotificationPlan deletes a Person's NotificationPlan
-func (a *Controller) DeleteNotificationPlan(w http.ResponseWriter, r *http.Request) {
+func (a *npEndpoint) Delete(w http.ResponseWriter, r *http.Request) {
 	var res NotificationPlanResponse
 
 	vars := mux.Vars(r)
@@ -72,7 +65,7 @@ func (a *Controller) DeleteNotificationPlan(w http.ResponseWriter, r *http.Reque
 }
 
 // CreateNotificationPlan creates a NotificationPlan for a Person
-func (a *Controller) CreateNotificationPlan(w http.ResponseWriter, r *http.Request) {
+func (a *npEndpoint) Create(w http.ResponseWriter, r *http.Request) {
 	var res NotificationPlanResponse
 	var p model.NotificationPlan
 
@@ -160,7 +153,7 @@ func (a *Controller) CreateNotificationPlan(w http.ResponseWriter, r *http.Reque
 }
 
 // UpdateNotificationPlan updates an NotificationPlan for a Person
-func (a *Controller) UpdateNotificationPlan(w http.ResponseWriter, r *http.Request) {
+func (a *npEndpoint) Update(w http.ResponseWriter, r *http.Request) {
 	var res NotificationPlanResponse
 	var p model.NotificationPlan
 

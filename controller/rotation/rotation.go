@@ -1,4 +1,4 @@
-package controller
+package rotation
 
 import (
 	"encoding/json"
@@ -12,40 +12,13 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// TeamsResponse is a struct to return one or more teams as JSON
-type TeamsResponse struct {
-	Teams   []model.Team `json:"teams"`
-	Message string       `json:"message"`
-	Error   string       `json:"error"`
-}
-
-// ListTeams fetches every team from the DB and returns them as JSON
-func (a *Controller) ListTeams(w http.ResponseWriter, r *http.Request) {
-	var res TeamsResponse
-
-	t, err := a.m.GetAllTeams()
-	if err != nil {
-		res.Error = err.Error()
-		errjson, _ := json.Marshal(res)
-		http.Error(w, string(errjson), http.StatusInternalServerError)
-		return
-	}
-
-	for _, v := range t {
-		res.Teams = append(res.Teams, *v)
-	}
-
-	json.NewEncoder(w).Encode(res)
-}
-
-// ShowTeam fetches a single team from the DB and returns them as JSON
-func (a *Controller) ShowTeam(w http.ResponseWriter, r *http.Request) {
-	var res TeamsResponse
+func (a *rotationEndpoint) Show(w http.ResponseWriter, r *http.Request) {
+	var res Response
 
 	vars := mux.Vars(r)
-	name := vars["team"]
+	name := vars["policy"]
 
-	p, err := a.m.GetTeam(name)
+	p, err := a.m.GetRotationPolicy(name)
 	if err != nil {
 		res.Error = err.Error()
 		errjson, _ := json.Marshal(res)
@@ -53,48 +26,45 @@ func (a *Controller) ShowTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res.Teams = append(res.Teams, *p)
+	res.Policies = append(res.Policies, *p)
 
 	json.NewEncoder(w).Encode(res)
 }
 
-// DeleteTeam deletes the specified team from the database
-func (a *Controller) DeleteTeam(w http.ResponseWriter, r *http.Request) {
-	var res TeamsResponse
+func (a *rotationEndpoint) Delete(w http.ResponseWriter, r *http.Request) {
+	var res Response
 
 	vars := mux.Vars(r)
-	name := vars["team"]
+	name := vars["policy"]
 
-	// Make sure the team actually exists before deleting
-	t, err := a.m.GetTeam(name)
-	if t == nil {
+	p, err := a.m.GetRotationPolicy(name)
+	if p == nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = fmt.Sprint("Team ", name, " does not exist and thus, cannot be deleted")
+		res.Error = fmt.Sprintf("Escalation policy %s does not exists and thus, cannot be deleted", name)
 		json.NewEncoder(w).Encode(res)
 		return
 	}
 	if err != nil {
-		log.Println("GetTeam() failed for", name)
+		log.Println("GetRotationPolicy() failed for", name)
 	}
 
-	err = a.m.DeleteTeam(name)
+	err = a.m.DeleteRotationPolicy(name)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	res.Message = fmt.Sprint("Team ", name, " deleted")
+	res.Message = fmt.Sprintf("Escalation policy %s deleted", name)
 
 	json.NewEncoder(w).Encode(res)
 }
 
-// CreateTeam creates a new team in the database
-func (a *Controller) CreateTeam(w http.ResponseWriter, r *http.Request) {
-	var res TeamsResponse
-	var t model.Team
+func (a *rotationEndpoint) Create(w http.ResponseWriter, r *http.Request) {
+	var res Response
+	var p model.RotationPolicy
 
-	// We're getting the details of this new team from the POSTed JSON
+	// We're getting the details of this new policy from the POSTed JSON
 	// so we first need to read in the body of the POST
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*10))
 	// If something went wrong, return an error in the JSON response
@@ -111,8 +81,8 @@ func (a *Controller) CreateTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Attempt to unmarshall the JSON into our Team struct
-	err = json.Unmarshal(body, &t)
+	// Attempt to unmarshall the JSON into our RotationPolicy struct
+	err = json.Unmarshal(body, &p)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
@@ -122,31 +92,31 @@ func (a *Controller) CreateTeam(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If a name was not provided, return an error
-	if t.Name == "" {
+	if p.Name == "" { // TODO further checks
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = "Must provide a team name"
+		res.Error = "Must provide a name"
 		json.NewEncoder(w).Encode(res)
 		return
 	}
 
-	// Make sure that this team doesn't already exist
-	fp, err := a.m.GetTeam(t.Name)
+	// Make sure that this policy doesn't already exist
+	fp, err := a.m.GetRotationPolicy(p.Name)
 	if fp != nil && fp.Name != "" {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = fmt.Sprint("Team ", t.Name, " already exists. Use PUT /teams/", t.Name, " to update.")
+		res.Error = fmt.Sprint("Escalation policy ", p.Name, " already exists. Use PUT /rotation/", p.Name, " to update.")
 		json.NewEncoder(w).Encode(res)
 		return
 	}
 	if err != nil {
-		log.Println("GetTeam() failed:", err)
+		log.Println("GetRotationPolicy() failed:", err)
 	}
 
-	// Store our new team in the DB
-	err = a.m.StoreTeam(&t)
+	// Store our new policy in the DB
+	err = a.m.StoreRotationPolicy(&p)
 	if err != nil {
-		log.Println("Error storing team:", err)
+		log.Println("Error storing policy:", err)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		res.Error = err.Error()
@@ -154,18 +124,17 @@ func (a *Controller) CreateTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res.Message = fmt.Sprint("Team ", t.Name, " created")
+	res.Message = fmt.Sprint("Plan ", p.Name, " created")
 
 	json.NewEncoder(w).Encode(res)
 }
 
-// UpdateTeam updates an existing team in the database
-func (a *Controller) UpdateTeam(w http.ResponseWriter, r *http.Request) {
-	var res TeamsResponse
-	var t model.Team
+func (a *rotationEndpoint) Update(w http.ResponseWriter, r *http.Request) {
+	var res Response
+	var p model.RotationPolicy
 
 	vars := mux.Vars(r)
-	name := vars["team"]
+	name := vars["policy"]
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1024*10))
 	// If something went wrong, return an error in the JSON response
@@ -182,7 +151,7 @@ func (a *Controller) UpdateTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.Unmarshal(body, &t)
+	err = json.Unmarshal(body, &p)
 
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -192,26 +161,35 @@ func (a *Controller) UpdateTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Make sure the team actually exists before updating
-	fp, err := a.m.GetTeam(name)
+	// TODO validate updated fields
+	if p.Name == "" {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		res.Error = "Must provide a name to update"
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+
+	// Make sure the policy actually exists before updating
+	fp, err := a.m.GetRotationPolicy(name)
 	if (fp != nil && fp.Name == "") || fp == nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
-		res.Error = fmt.Sprint("Team ", t.Name, " does not exist. Use POST to create.")
+		res.Error = fmt.Sprint("User ", p.Name, " does not exist. Use POST to create.")
 		json.NewEncoder(w).Encode(res)
 		return
 	}
 	if err != nil {
-		log.Println("GetTeam() failed for", name)
+		log.Println("GetRotationPolicy() failed for", name)
 	}
 
-	// Now that we know our team exists in the DB, copy the name from the URI path and add it to our struct
-	t.Name = name
+	// Now that we know our policy exists in the DB, copy the name from the URI path and add it to our struct
+	p.Name = name
 
-	// Store the updated team in the DB
-	err = a.m.StoreTeam(&t)
+	// Store the updated user in the DB
+	err = a.m.StoreRotationPolicy(&p)
 	if err != nil {
-		log.Println("Error storing team", err)
+		log.Println("Error storing person:", err)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		res.Error = err.Error()
@@ -219,8 +197,8 @@ func (a *Controller) UpdateTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res.Teams = append(res.Teams, t)
-	res.Message = fmt.Sprint("Team ", name, " updated")
+	res.Policies = append(res.Policies, p)
+	res.Message = fmt.Sprint("Escalation policy ", name, " updated")
 
 	json.NewEncoder(w).Encode(res)
 

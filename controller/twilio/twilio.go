@@ -1,4 +1,4 @@
-package controller
+package twilio
 
 import (
 	"encoding/json"
@@ -12,16 +12,9 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// CallbackResponse is the json struct as returned from twilio in the callbacks
-type CallbackResponse struct {
-	UUID    string `json:"uuid"`
-	Message string `json:"message"`
-	Error   string `json:"error"`
-}
-
 // ReceiveSMSReply receives the SMS reply callback from Twilio and deletes the notification if the
 // response text matches the code sent with the original SMS notification
-func (a *Controller) ReceiveSMSReply(w http.ResponseWriter, r *http.Request) {
+func (a *twilioEndpoint) ReceiveSMSReply(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Println("ReceiveSMSReply() r.ParseForm() error:", err)
@@ -64,7 +57,7 @@ func (a *Controller) ReceiveSMSReply(w http.ResponseWriter, r *http.Request) {
 
 // ReceiveCallback receives call progress callbacks from the Twilio API.  Not currently used.
 // May be used for Websocket interface in the future.
-func (a *Controller) ReceiveCallback(w http.ResponseWriter, r *http.Request) {
+func (a *twilioEndpoint) ReceiveCallback(w http.ResponseWriter, r *http.Request) {
 	var res CallbackResponse
 
 	vars := mux.Vars(r)
@@ -85,7 +78,7 @@ func (a *Controller) ReceiveCallback(w http.ResponseWriter, r *http.Request) {
 
 // ReceiveDigits receives digits pressed during a phone call via callback by the Twilio API.
 // Stops the notification if the user pressed any keys.
-func (a *Controller) ReceiveDigits(w http.ResponseWriter, r *http.Request) {
+func (a *twilioEndpoint) ReceiveDigits(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
@@ -134,7 +127,7 @@ func (a *Controller) ReceiveDigits(w http.ResponseWriter, r *http.Request) {
 }
 
 // GenerateTwiML is a Twilio callback which generates TwiML that is used to describe the flow of the phone call.
-func (a *Controller) GenerateTwiML(w http.ResponseWriter, r *http.Request) {
+func (a *twilioEndpoint) GenerateTwiML(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
 	action := vars["action"]

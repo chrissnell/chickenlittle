@@ -1,7 +1,18 @@
 package controller
 
 import (
+	"log"
+
 	"github.com/chrissnell/chickenlittle/config"
+	_ "github.com/chrissnell/chickenlittle/controller/escalation"   // register escalation plugin
+	_ "github.com/chrissnell/chickenlittle/controller/notification" // register notification plugin
+	_ "github.com/chrissnell/chickenlittle/controller/people"       // register people plugin
+	_ "github.com/chrissnell/chickenlittle/controller/plan"         // register escalation plan plugin
+	"github.com/chrissnell/chickenlittle/controller/plugin"
+	_ "github.com/chrissnell/chickenlittle/controller/rotation"  // register rotation plugin
+	_ "github.com/chrissnell/chickenlittle/controller/team"      // register team plugin
+	_ "github.com/chrissnell/chickenlittle/controller/twilio"    // register twilio plugin
+	_ "github.com/chrissnell/chickenlittle/controller/victorops" // register victorops plugin
 	"github.com/chrissnell/chickenlittle/model"
 	"github.com/chrissnell/chickenlittle/notification"
 	"github.com/chrissnell/chickenlittle/rotation"
@@ -10,19 +21,26 @@ import (
 
 // Controller contains the HTTP controller with all necessary dependencies
 type Controller struct {
-	c config.Config
-	m *model.Model
-	n *notification.Engine
-	r *rotation.Engine
+	c   config.Config
+	m   *model.Model
+	n   *notification.Engine
+	r   *rotation.Engine
+	eps []plugin.Endpoint
 }
 
 // New will create a new Controller
 func New(config config.Config, model *model.Model, eng *notification.Engine, rot *rotation.Engine) *Controller {
 	a := &Controller{
-		c: config,
-		m: model,
-		n: eng,
-		r: rot,
+		c:   config,
+		m:   model,
+		n:   eng,
+		r:   rot,
+		eps: make([]plugin.Endpoint, 0, 10),
+	}
+	for _, ep := range plugin.Endpoints() {
+		ep.SetConfig(model, config, eng)
+		a.eps = append(a.eps, ep)
+		log.Println("Plugin configured:", ep.Name())
 	}
 	return a
 }
@@ -31,35 +49,9 @@ func New(config config.Config, model *model.Model, eng *notification.Engine, rot
 func (a *Controller) APIRouter() *mux.Router {
 	apiRouter := mux.NewRouter().StrictSlash(true)
 
-	apiRouter.HandleFunc("/people", a.ListPeople).Methods("GET")
-	apiRouter.HandleFunc("/people", a.CreatePerson).Methods("POST")
-	apiRouter.HandleFunc("/people/{person}", a.ShowPerson).Methods("GET")
-	apiRouter.HandleFunc("/people/{person}", a.DeletePerson).Methods("DELETE")
-	apiRouter.HandleFunc("/people/{person}", a.UpdatePerson).Methods("PUT")
-
-	apiRouter.HandleFunc("/plan", a.CreateNotificationPlan).Methods("POST")
-	apiRouter.HandleFunc("/plan/{person}", a.ShowNotificationPlan).Methods("GET")
-	apiRouter.HandleFunc("/plan/{person}", a.DeleteNotificationPlan).Methods("DELETE")
-	apiRouter.HandleFunc("/plan/{person}", a.UpdateNotificationPlan).Methods("PUT")
-
-	apiRouter.HandleFunc("/people/{person}/notify", a.NotifyPerson).Methods("POST")
-	apiRouter.HandleFunc("/notifications/{uuid}", a.StopNotification).Methods("DELETE")
-
-	apiRouter.HandleFunc("/teams", a.ListTeams).Methods("GET")
-	apiRouter.HandleFunc("/teams", a.CreateTeam).Methods("POST")
-	apiRouter.HandleFunc("/teams/{team}", a.ShowTeam).Methods("GET")
-	apiRouter.HandleFunc("/teams/{team}", a.DeleteTeam).Methods("DELETE")
-	apiRouter.HandleFunc("/teams/{team}", a.UpdateTeam).Methods("PUT")
-
-	apiRouter.HandleFunc("/escalation", a.CreateEscalationPlan).Methods("POST")
-	apiRouter.HandleFunc("/escalation/{plan}", a.ShowEscalationPlan).Methods("GET")
-	apiRouter.HandleFunc("/escalation/{plan}", a.DeleteEscalationPlan).Methods("DELETE")
-	apiRouter.HandleFunc("/escalation/{plan}", a.UpdateEscalationPlan).Methods("PUT")
-
-	apiRouter.HandleFunc("/rotation", a.CreateRotationPolicy).Methods("POST")
-	apiRouter.HandleFunc("/rotation/{policy}", a.ShowRotationPolicy).Methods("GET")
-	apiRouter.HandleFunc("/rotation/{policy}", a.DeleteRotationPolicy).Methods("DELETE")
-	apiRouter.HandleFunc("/rotation/{policy}", a.UpdateRotationPolicy).Methods("PUT")
+	for _, ep := range a.eps {
+		ep.APIRoutes(apiRouter)
+	}
 
 	return apiRouter
 }
@@ -68,10 +60,9 @@ func (a *Controller) APIRouter() *mux.Router {
 func (a *Controller) CallbackRouter() *mux.Router {
 	callbackRouter := mux.NewRouter().StrictSlash(true)
 
-	callbackRouter.HandleFunc("/{uuid}/twiml/{action}", a.GenerateTwiML).Methods("POST")
-	callbackRouter.HandleFunc("/{uuid}/callback", a.ReceiveCallback).Methods("POST")
-	callbackRouter.HandleFunc("/{uuid}/digits", a.ReceiveDigits).Methods("POST")
-	callbackRouter.HandleFunc("/sms", a.ReceiveSMSReply).Methods("POST")
+	for _, ep := range a.eps {
+		ep.CallbackRoutes(callbackRouter)
+	}
 
 	return callbackRouter
 }
@@ -80,7 +71,9 @@ func (a *Controller) CallbackRouter() *mux.Router {
 func (a *Controller) ClickRouter() *mux.Router {
 	clickRouter := mux.NewRouter().StrictSlash(true)
 
-	clickRouter.HandleFunc("/{uuid}/stop", a.StopNotificationClick).Methods("GET")
+	for _, ep := range a.eps {
+		ep.ClickRoutes(clickRouter)
+	}
 
 	return clickRouter
 }

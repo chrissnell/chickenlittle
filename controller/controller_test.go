@@ -12,103 +12,45 @@ import (
 	"github.com/chrissnell/chickenlittle/rotation"
 )
 
-const testConfigYAML = `
----
-service:
-  api_listen_address: '127.0.0.1:51234'
-  click_listen_address: '127.0.0.1:51234'
-  click_url_base: 'http://127.0.0.1:51235/'
-  callback_listen_address: '127.0.0.1:51236'
-  callback_url_base: 'http://127.0.0.1:51236/'
-  db_file: '/tmp/db'
-
-integrations:
-  hipchat:
-    hipchat_auth_token: abc
-    hipchat_announce_room: def
-  victorops:
-    api_key: hjk
-  twilio:
-    account_sid: 12345
-    auth_token: ABC
-    call_from_number: 5554321
-    api_base_url: 'http://127.0.0.1:51237'
-  mailgun:
-    enabled: true
-    api_key: 987654
-    hostname: localhost
-  smtp:
-    hostname: localhost
-    port: 51238
-    login: user
-    password: pass
-    sender: 'mailer@example.com'
-`
-
-// TestCL is a special ChieckLittle client for testing
-type TestCL struct {
+type clTemp struct {
 	Config  config.Config
-	D       *db.DB
-	N       *notification.Engine
-	A       *Controller
-	M       *model.Model
+	db      *db.DB
+	notify  *notification.Engine
+	api     *Controller
+	model   *model.Model
 	tempdir string
 }
 
-// NewTestCL does all the necessary setup for a simple test client
-func NewTestCL() (*TestCL, error) {
+func newTestClient() (*clTemp, error) {
+	var err error
+	c := &clTemp{}
+
 	// create tempdir for fs based tests
-	tempdir, _ := ioutil.TempDir(os.TempDir(), "chickenlittle-tests-")
-	// create config file
-	cfgfile := tempdir + "/config"
-	_ = ioutil.WriteFile(cfgfile, []byte(testConfigYAML), 0644)
-
-	// open config
-	c, err := config.New(cfgfile)
+	c.tempdir, err = ioutil.TempDir(os.TempDir(), "chickenlittle-tests-")
 	if err != nil {
-		return nil, err
+		return c, err
 	}
+	c.Config = config.NewDefault()
+	c.Config.Service.DBFile = c.tempdir + "/db"
+	c.db = db.New(c.Config.Service.DBFile)
+	c.model = model.New(c.db)
+	c.notify = notification.New(c.Config)
+	r := rotation.New(c.model)
+	c.api = New(c.Config, c.model, c.notify, r)
 
-	// open DB
-	c.Service.DBFile = tempdir + "/db"
-	d := db.New(c.Service.DBFile)
-
-	// create model instance
-	m := model.New(d)
-
-	// create notification engine instance
-	n := notification.New(c)
-
-	// create rotation engine instance
-	r := rotation.New(m)
-
-	// create controller instance
-	a := New(c, m, n, r)
-
-	// create the test client
-	cl := &TestCL{
-		Config:  c,
-		D:       d,
-		A:       a,
-		M:       m,
-		N:       n,
-		tempdir: tempdir,
-	}
-	return cl, nil
+	return c, nil
 }
 
-// Close performs the necessary teardown of the test client.
-func (c *TestCL) Close() {
-	c.D.Close()
+func (c *clTemp) Close() {
+	c.db.Close()
 	_ = os.RemoveAll(c.tempdir)
 }
 
 // TestAPI will only ensure we can create an test client with API, model, db, et. al.
 func TestAPI(t *testing.T) {
-	cl, err := NewTestCL()
+	cl, err := newTestClient()
 	if err != nil {
-		t.Fatalf("Failed to create test client: %s", err)
+		t.Fatalf("Failed to create new test client: %s", err)
 	}
 	defer cl.Close()
-
 }

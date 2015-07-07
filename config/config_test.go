@@ -118,3 +118,34 @@ func TestConfig(t *testing.T) {
 		t.Errorf("SMTP.Sender is wrong")
 	}
 }
+
+func TestDefaultConfig(t *testing.T) {
+	c := NewDefault()
+	if c.Service.APIListenAddr != ":21001" {
+		t.Errorf("APIListenAddr is wrong")
+	}
+	if c.Service.ClickListenAddr != ":21002" {
+		t.Errorf("ClickListenAddr is wrong")
+	}
+	if c.Service.ClickURLBase != "http://localhost:21002/" {
+		t.Errorf("ClickURLBase is wrong")
+	}
+	if c.Service.CallbackListenAddr != ":21003" {
+		t.Errorf("CallbackListenAddr is wrong")
+	}
+	if c.Service.CallbackURLBase != "http://localhost:21003/" {
+		t.Errorf("CallbackURLBase is wrong")
+	}
+	if c.Service.DBFile != "chickenlittle.db" {
+		t.Errorf("DBFile is wrong")
+	}
+	if c.Integrations.SMTP.Hostname != "localhost" {
+		t.Errorf("SMTP Hostname is wrong")
+	}
+	if c.Integrations.SMTP.Port != 25 {
+		t.Errorf("SMTP Port is wrong")
+	}
+	if c.Integrations.SMTP.Sender != "chickenlittle@localhost" {
+		t.Errorf("SMTP Sender is wrong")
+	}
+}

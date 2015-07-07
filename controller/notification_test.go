@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/chrissnell/chickenlittle/controller/notification"
 )
 
 const testCreateNotificationJSON = `
@@ -22,14 +24,14 @@ func TestPersonNotification(t *testing.T) {
 	var p *bytes.Buffer
 	var err error
 
-	cl, err := NewTestCL()
+	cl, err := newTestClient()
 	if err != nil {
 		t.Fatalf("Failed to create test client: %s", err)
 	}
 	defer cl.Close()
 
 	// prepare the API router
-	router := cl.A.APIRouter()
+	router := cl.api.APIRouter()
 
 	// Create a person to test with
 	w = httptest.NewRecorder()
@@ -71,7 +73,7 @@ func TestPersonNotification(t *testing.T) {
 	}
 
 	// decode the response to extract the UUID for the following API calls
-	resp := &NotifyPersonResponse{}
+	resp := &notification.Response{}
 	err = json.Unmarshal(w.Body.Bytes(), &resp)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal: %s", err)
@@ -110,7 +112,7 @@ func TestPersonNotification(t *testing.T) {
 	}
 
 	// decode the response to extract the UUID for the following API calls
-	resp = &NotifyPersonResponse{}
+	resp = &notification.Response{}
 	err = json.Unmarshal(w.Body.Bytes(), &resp)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal: %s", err)
@@ -130,7 +132,7 @@ func TestPersonNotification(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create new HTTP Request: %s", err)
 	}
-	cl.A.ClickRouter().ServeHTTP(w, r)
+	cl.api.ClickRouter().ServeHTTP(w, r)
 	// verify response
 	if w.Code != 200 {
 		t.Fatalf("StopNotificationClick request failed: %d - %s", w.Code, w.Body)

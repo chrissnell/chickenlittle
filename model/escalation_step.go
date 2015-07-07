@@ -12,6 +12,7 @@ const (
 	NotifyOtherPerson                            // 2 - Notifies another person, not necessarily part of the current rotation or team.  Could be a manager.
 	NotifyWebhook                                // 3 - Calls a webhook (URL stored in EscalationStep.Target)
 	NotifyEmail                                  // 4 - Notifies an e-mail address (e-mail address stored in EscalationStep.Target)
+	NotifyAllInRotation                          // 5 - Notifies all persons in the current team rotation
 )
 
 // EscalationStep defines how a particular stage of team notification is handled.

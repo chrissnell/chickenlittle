@@ -19,7 +19,7 @@ type testCL struct {
 	e       *Engine
 }
 
-func NewTestCL() *testCL {
+func newTestCL() *testCL {
 	c := &testCL{}
 	// create tempdir for fs based tests
 	c.tempdir, _ = ioutil.TempDir(os.TempDir(), "chickenlittle-tests-")
@@ -62,7 +62,7 @@ func (c *testCL) Close() {
 }
 
 func TestPostiveRotationFrequency(t *testing.T) {
-	cl := NewTestCL()
+	cl := newTestCL()
 	defer cl.Close()
 
 	teamName := "tester"
@@ -106,7 +106,7 @@ func TestPostiveRotationFrequency(t *testing.T) {
 }
 
 func TestZeroRotationFrequency(t *testing.T) {
-	cl := NewTestCL()
+	cl := newTestCL()
 	defer cl.Close()
 
 	teamName := "tester"
@@ -151,7 +151,7 @@ func TestZeroRotationFrequency(t *testing.T) {
 }
 
 func TestRotateTimeFuture(t *testing.T) {
-	cl := NewTestCL()
+	cl := newTestCL()
 	defer cl.Close()
 
 	teamName := "tester"
@@ -197,7 +197,7 @@ func TestRotateTimeFuture(t *testing.T) {
 }
 
 func TestRotateTimePast(t *testing.T) {
-	cl := NewTestCL()
+	cl := newTestCL()
 	defer cl.Close()
 
 	teamName := "tester"

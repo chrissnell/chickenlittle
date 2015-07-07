@@ -1,4 +1,4 @@
-package controller
+package people
 
 import (
 	"encoding/json"
@@ -10,19 +10,9 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// NotifyPersonResponse is the response sent to the client in response
-// to the NotifyPersonRequest.
-type NotifyPersonResponse struct {
-	Username string `json:"username"`
-	UUID     string `json:"uuid"`
-	Content  string `json:"content"`
-	Message  string `json:"message"`
-	Error    string `json:"error"`
-}
-
 // NotifyPerson notifies a Person by looking up their NotificationPlan and sending it to the person notification engine.
-func (a *Controller) NotifyPerson(w http.ResponseWriter, r *http.Request) {
-	var res NotifyPersonResponse
+func (a *personEndpoint) Notify(w http.ResponseWriter, r *http.Request) {
+	var res NotificationResponse
 	var req NotificationRequest
 
 	vars := mux.Vars(r)
@@ -62,7 +52,7 @@ func (a *Controller) NotifyPerson(w http.ResponseWriter, r *http.Request) {
 	a.n.EnqueueNotification(&n)
 	log.Printf("Enqueued notification: %v", n)
 
-	res = NotifyPersonResponse{
+	res = NotificationResponse{
 		Message:  "Notification initiated",
 		Content:  n.Message(),
 		UUID:     n.ID(),

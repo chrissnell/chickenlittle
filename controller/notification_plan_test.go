@@ -47,14 +47,14 @@ func TestNotificationPlan(t *testing.T) {
 	var p *bytes.Buffer
 	var err error
 
-	cl, err := NewTestCL()
+	cl, err := newTestClient()
 	if err != nil {
-		t.Fatalf("Failed to create test client: %s", err)
+		t.Fatalf("Failed to create new test client: %s", err)
 	}
 	defer cl.Close()
 
 	// prepare the API router
-	router := cl.A.APIRouter()
+	router := cl.api.APIRouter()
 
 	// We need a Person to test the notification plans
 	w = httptest.NewRecorder()
