@@ -97,7 +97,7 @@ func (a *Controller) CreateEscalationPlan(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// If a ame was not provided, return an error
+	// If a name was not provided, return an error
 	if p.Name == "" { // TODO further checks
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
