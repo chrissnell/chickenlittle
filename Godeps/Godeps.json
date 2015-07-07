@@ -1,0 +1,54 @@
+{
+	"ImportPath": "github.com/chrissnell/chickenlittle",
+	"GoVersion": "go1.4.2",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "bitbucket.org/ckvist/twilio/twiml",
+			"Rev": "ceea1fc2b36b499d88ce826acc1124fed0ba8b75"
+		},
+		{
+			"ImportPath": "github.com/boltdb/bolt",
+			"Comment": "v1.0-106-g5eb31d5",
+			"Rev": "5eb31d5821750fbc84284d610c0ce85261662adb"
+		},
+		{
+			"ImportPath": "github.com/chrissnell/victorops-go",
+			"Rev": "76b624bcabe3f4c282bfd6d6d4b36fb6238d2221"
+		},
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Rev": "215affda49addc4c8ef7e2534915df2c8c35c6cd"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Rev": "94903de8c98a68d8b4483c529b26a5d146e386a2"
+		},
+		{
+			"ImportPath": "github.com/jpoehls/gophermail",
+			"Rev": "dcb85aff75d2cd1211c74050deadbf99f8515a9f"
+		},
+		{
+			"ImportPath": "github.com/mailgun/mailgun-go",
+			"Rev": "e5be78db035a805f70f1c467663b324a3ac41259"
+		},
+		{
+			"ImportPath": "github.com/mbanzon/simplehttp",
+			"Rev": "6894781bc95b6a11c8b4e4a83eedb06c8a0b4536"
+		},
+		{
+			"ImportPath": "github.com/sloonz/go-qprintable",
+			"Rev": "e2d1cacbb8fa8f3158a2d7e7f08d9a82b7036fee"
+		},
+		{
+			"ImportPath": "github.com/twinj/uuid",
+			"Rev": "4d772442af203e27723acc7d1eea6c93cd319c57"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Rev": "c1cd2254a6dd314c9d73c338c12688c9325d85c6"
+		}
+	]
+}
