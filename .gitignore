@@ -1,6 +1,7 @@
 chickenlittle.db
 chickenlittle
 config.yaml
+*.test
 
 stash
 stash/*
