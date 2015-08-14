@@ -1,4 +1,4 @@
-package controller
+package team
 
 import (
 	"encoding/json"
@@ -9,18 +9,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// NotifyTeamResponse is the response sent to the client in response
-// to the NotifyTeamRequest.
-type NotifyTeamResponse struct {
-	Name    string `json:"name"`
-	UUID    string `json:"uuid"`
-	Content string `json:"content"`
-	Message string `json:"message"`
-	Error   string `json:"error"`
-}
-
 // NotifyTeam notifies a team by looking up the escalation order and sending it to the team notification engine.
-func (a *Controller) NotifyTeam(w http.ResponseWriter, r *http.Request) {
+func (a *teamEndpoint) Notify(w http.ResponseWriter, r *http.Request) {
 	var res NotifyTeamResponse
 	var req NotificationRequest
 

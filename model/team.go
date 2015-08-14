@@ -115,6 +115,8 @@ STEPS:
 	for n, step := range escPlan.Steps {
 		es := &escalationStep{}
 		switch step.Method {
+		// NotifyOnDuty will always notify the first member in the team array. On shift rotation
+		// this array will be reordered and the next one on duty will be put on position 0.
 		case NotifyOnDuty:
 			ns, err := m.getNotificationSteps(team.Members[0])
 			if err != nil {
@@ -122,6 +124,9 @@ STEPS:
 				continue STEPS
 			}
 			es.steps = ns
+		// NotifyNextInRotation will start at the first team member after the one on duty and continue
+		// notifying members at each occurency of NotifyNextInRotation until all team members are exhausted.
+		// At that point further NotifyNextInRotatation steps will silently be ignored.
 		case NotifyNextInRotation:
 			curMember++
 			if curMember >= len(team.Members) {
@@ -134,6 +139,28 @@ STEPS:
 				continue STEPS
 			}
 			es.steps = ns
+		// NotifyAllInRotation will add all available team members to the escalation plan.
+		case NotifyAllInRotation:
+			if len(team.Members) < 2 {
+				log.Printf("Not enough team mebers available whil constructing escalation plan for %s in step %d", name, n)
+				continue STEPS
+			}
+			for i := 1; i < len(team.Members)-1; i++ {
+				ns, err := m.getNotificationSteps(team.Members[i])
+				if err != nil {
+					continue
+				}
+				es := &escalationStep{}
+				es.steps = ns
+				escSteps = append(escSteps, es)
+			}
+			ns, err := m.getNotificationSteps(team.Members[len(team.Members)-1])
+			if err != nil {
+				continue STEPS
+			}
+			es.steps = ns
+		// NotifyOtherPerson will create a notification step for a given person. This person must exist
+		// somewhere in CL. In the current team or any other doesn't matter.
 		case NotifyOtherPerson:
 			ns, err := m.getNotificationSteps(step.Target)
 			if err != nil {
@@ -141,6 +168,7 @@ STEPS:
 				continue STEPS
 			}
 			es.steps = ns
+		// NotifyWebhook will notify make an HTTP POST request to the given URL.
 		case NotifyWebhook:
 			u, err := url.Parse(step.Target)
 			if err != nil {
@@ -151,6 +179,7 @@ STEPS:
 				target: u,
 			}
 			es.steps = []NotificationSteper{s}
+		// NotifyEmail will send an email to the given address.
 		case NotifyEmail:
 			u, err := url.Parse("mailto://" + step.Target)
 			if err != nil {

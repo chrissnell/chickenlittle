@@ -1,4 +1,4 @@
-package controller
+package notification
 
 import (
 	"encoding/json"
@@ -8,16 +8,9 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// NotificationRequest is the JSON request sent by a client to trigger
-// to escalating notification of a whole team. Implements the Notification interface.
-type NotificationRequest struct {
-	Summary string `json:"summary"` // a summary or subject of the notification. Currenlty not used in all integrations. Optional.
-	Content string `json:"content"` // the notification content. mandatory.
-}
-
 // StopNotification stops a notification-in-progress (NIP) by sending the UUID to the notification engine
-func (a *Controller) StopNotification(w http.ResponseWriter, r *http.Request) {
-	var res NotifyPersonResponse
+func (a *notificationEndpoint) StopNotification(w http.ResponseWriter, r *http.Request) {
+	var res Response
 
 	vars := mux.Vars(r)
 	id := vars["uuid"]
@@ -25,7 +18,7 @@ func (a *Controller) StopNotification(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 
 	if !a.n.IsNotification(id) {
-		res = NotifyPersonResponse{
+		res = Response{
 			Error: "No active notifications for this UUID",
 			UUID:  id,
 		}
@@ -40,7 +33,7 @@ func (a *Controller) StopNotification(w http.ResponseWriter, r *http.Request) {
 	// TO DO: make sure that this is a valid UUID and obtain
 	//        confirmation of deletion
 
-	res = NotifyPersonResponse{
+	res = Response{
 		Message: "Attempting to terminate notification",
 		UUID:    id,
 	}
@@ -49,7 +42,7 @@ func (a *Controller) StopNotification(w http.ResponseWriter, r *http.Request) {
 }
 
 // StopNotificationClick provides a simple GET-able endpoint to stop notifications when a link is clicked in an email client
-func (a *Controller) StopNotificationClick(w http.ResponseWriter, r *http.Request) {
+func (a *notificationEndpoint) StopNotificationClick(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	id := vars["uuid"]

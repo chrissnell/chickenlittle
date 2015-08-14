@@ -1,7 +1,6 @@
-package main
+package server
 
 import (
-	"flag"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -12,7 +11,6 @@ import (
 	"github.com/chrissnell/chickenlittle/model"
 	"github.com/chrissnell/chickenlittle/notification"
 	"github.com/chrissnell/chickenlittle/rotation"
-	"github.com/chrissnell/chickenlittle/server"
 )
 
 // ChickenLittle contains the notification service server
@@ -38,6 +36,7 @@ func New(filename string) *ChickenLittle {
 
 	// Open our BoltDB handle
 	c.db = db.New(c.Config.Service.DBFile)
+	defer c.db.Close()
 
 	// Initialize the data model
 	c.model = model.New(c.db)
@@ -73,13 +72,4 @@ func (c *ChickenLittle) Listen() {
 // Close will shut down the ChickenLittle service
 func (c *ChickenLittle) Close() {
 	c.db.Close()
-}
-
-func main() {
-	cfgFile := flag.String("config", "config.yaml", "Path to config file (default: ./config.yaml)")
-	flag.Parse()
-
-	c := server.New(*cfgFile)
-	defer c.Close()
-	c.Listen()
 }

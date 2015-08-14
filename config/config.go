@@ -82,7 +82,26 @@ func New(filename string) (Config, error) {
 
 // NewDefault creates valid default config.
 func NewDefault() Config {
-	c := Config{}
-	// TODO fill in sane default values
+	c := Config{
+		Service: ServiceConfig{
+			APIListenAddr:      ":21001",
+			ClickListenAddr:    ":21002",
+			ClickURLBase:       "http://localhost:21002/",
+			CallbackListenAddr: ":21003",
+			CallbackURLBase:    "http://localhost:21003/",
+			DBFile:             "chickenlittle.db",
+		},
+		Integrations: Integrations{
+			HipChat:   HipChat{},
+			VictorOps: VictorOps{},
+			Twilio:    Twilio{},
+			Mailgun:   Mailgun{},
+			SMTP: SMTP{
+				Hostname: "localhost",
+				Port:     25,
+				Sender:   "chickenlittle@localhost",
+			},
+		},
+	}
 	return c
 }

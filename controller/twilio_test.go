@@ -15,14 +15,14 @@ func TestReceiveSMSReply(t *testing.T) {
 	var r *http.Request
 	var err error
 
-	cl, err := NewTestCL()
+	cl, err := newTestClient()
 	if err != nil {
 		t.Fatalf("Failed to create test client: %s", err)
 	}
 	defer cl.Close()
 
 	// prepare the callback router
-	router := cl.A.CallbackRouter()
+	router := cl.api.CallbackRouter()
 	// POST /sms
 	w = httptest.NewRecorder()
 	data := url.Values{
@@ -51,14 +51,14 @@ func TestReceiveCallback(t *testing.T) {
 	var r *http.Request
 	var err error
 
-	cl, err := NewTestCL()
+	cl, err := newTestClient()
 	if err != nil {
 		t.Fatalf("Failed to create test client: %s", err)
 	}
 	defer cl.Close()
 
 	// prepare the callback router
-	router := cl.A.CallbackRouter()
+	router := cl.api.CallbackRouter()
 
 	// TODO we should create a notification first to have an valid uuid
 	uuid := uuid.NewV4().String()
@@ -85,14 +85,14 @@ func TestReceiveDigits(t *testing.T) {
 	//var p *bytes.Buffer
 	var err error
 
-	cl, err := NewTestCL()
+	cl, err := newTestClient()
 	if err != nil {
 		t.Fatalf("Failed to create test client: %s", err)
 	}
 	defer cl.Close()
 
 	// prepare the callback router
-	router := cl.A.CallbackRouter()
+	router := cl.api.CallbackRouter()
 
 	// TODO we should create a notification first to have an valid uuid
 	uuid := uuid.NewV4().String()
@@ -125,14 +125,14 @@ func TestGenerateTwiML(t *testing.T) {
 	var r *http.Request
 	var err error
 
-	cl, err := NewTestCL()
+	cl, err := newTestClient()
 	if err != nil {
 		t.Fatalf("Failed to create test client: %s", err)
 	}
 	defer cl.Close()
 
 	// prepare the callback router
-	router := cl.A.CallbackRouter()
+	router := cl.api.CallbackRouter()
 
 	// TODO we should create a notification first to have an valid uuid
 	uuid := uuid.NewV4().String()

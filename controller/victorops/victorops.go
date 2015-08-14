@@ -1,4 +1,4 @@
-package controller
+package victorops
 
 import (
 	"encoding/json"
@@ -13,10 +13,10 @@ import (
 )
 
 // NotifyPersonViaVictorops will send a notification via VictorOps
-func (a *Controller) NotifyPersonViaVictorops(w http.ResponseWriter, r *http.Request) {
+func (a *victoropsEndpoint) Notify(w http.ResponseWriter, r *http.Request) {
 
-	var n Notification
-	var res PeopleResponse
+	var n NotificationRequest
+	var res NotificationResponse
 
 	vars := mux.Vars(r)
 	username := vars["person"]
@@ -58,7 +58,7 @@ func (a *Controller) NotifyPersonViaVictorops(w http.ResponseWriter, r *http.Req
 	e := &victorops.Event{
 		RoutingKey:  p.VictorOpsRoutingKey,
 		MessageType: victorops.Critical,
-		EntityID:    n.Message,
+		EntityID:    n.Content,
 		Timestamp:   time.Now(),
 	}
 
