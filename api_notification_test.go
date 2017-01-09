@@ -9,6 +9,8 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/chrissnell/chickenlittle/notification"
 )
 
 const testCreateNotificationJson = `
@@ -36,8 +38,7 @@ func TestNotification(t *testing.T) {
 	defer c.DB.Close()
 
 	// The notification engine must be running, or we'll run into an deadlock
-	stopChan = make(chan string)
-	go StartNotificationEngine()
+	c.Notify = notification.New(c.Config)
 
 	// prepare the API router
 	router := apiRouter()
@@ -107,6 +108,33 @@ func TestNotification(t *testing.T) {
 		t.Errorf("StopNotification request failed: %d", w.Code)
 	}
 
+	// Test NotifyPerson: POST /people/lancelot/notify
+	w = httptest.NewRecorder()
+	p = bytes.NewBufferString(testCreateNotificationJson)
+	r, err = http.NewRequest("POST", "http://localhost/people/lancelot/notify", p)
+	if err != nil {
+		t.Fatalf("Failed to create new HTTP Request: %s", err)
+	}
+	router.ServeHTTP(w, r)
+	// verify response
+	if w.Code != 200 {
+		t.Fatalf("NotifyPerson request failed")
+	}
+
+	// decode the response to extract the UUID for the following API calls
+	resp = &NotifyPersonResponse{}
+	err = json.Unmarshal(w.Body.Bytes(), &resp)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal: %s", err)
+	}
+	uuid = resp.UUID
+	if resp.Error != "" {
+		t.Fatalf("Notification Error: %s", resp.Error)
+	}
+	t.Logf("UUID: %s", uuid)
+	// we need to give the NotificationEndine some time to pick up the notification job
+	time.Sleep(time.Millisecond)
+
 	// Test StopNotificationClick: ???
 	// args: uuid
 	w = httptest.NewRecorder()
@@ -117,7 +145,7 @@ func TestNotification(t *testing.T) {
 	clickRouter().ServeHTTP(w, r)
 	// verify response
 	if w.Code != 200 {
-		t.Fatalf("StopNotificationClick request failed: %d", w.Code)
+		t.Fatalf("StopNotificationClick request failed: %d - %s", w.Code, w.Body)
 	}
 
 }

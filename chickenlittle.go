@@ -2,25 +2,24 @@ package main
 
 import (
 	"flag"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"path/filepath"
 
+	"github.com/chrissnell/chickenlittle/config"
+	"github.com/chrissnell/chickenlittle/notification"
 	"github.com/gorilla/mux"
-	"gopkg.in/yaml.v2"
 )
 
 var (
-	cfgFile  *string
-	c        ChickenLittle
-	NIP      NotificationsInProgress
-	planChan = make(chan *NotificationRequest)
+	cfgFile *string
+	c       ChickenLittle
 )
 
 type ChickenLittle struct {
-	Config Config
+	Config config.Config
 	DB     DB
+	Notify *notification.Engine
 }
 
 func main() {
@@ -30,22 +29,18 @@ func main() {
 
 	// Read our server configuration
 	filename, _ := filepath.Abs(*cfgFile)
-	cfgFile, err := ioutil.ReadFile(filename)
+	cfg, err := config.New(filename)
 	if err != nil {
-		log.Fatalln("Error opening config file.  Did you pass the -config flag?  Run with -h for help.\n", err)
+		log.Fatalln("Error reading config file.  Did you pass the -config flag?  Run with -h for help.\n", err)
 	}
-	err = yaml.Unmarshal(cfgFile, &c.Config)
-	if err != nil {
-		log.Fatalln("Error:", err)
-	}
+	c.Config = cfg
 
 	// Open our BoltDB handle
 	c.DB.Open(c.Config.Service.DBFile)
 	defer c.DB.Close()
 
-	// Create our stop channel and launch the notification engine
-	stopChan = make(chan string)
-	go StartNotificationEngine()
+	// Launch the notification engine
+	c.Notify = notification.New(c.Config)
 
 	// Set up our API endpoint router
 	go func() {
