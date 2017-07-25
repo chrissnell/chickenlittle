@@ -28,7 +28,7 @@ You'll need a Twilio account if you want to notify by voice and/or SMS.  You'll 
 ```sudo cp $GOPATH/bin/chickenlittle /usr/local/bin/```
 
 5. Copy the sample config.yaml into the directory you made in step 3:
-```sudo cp $GOPATH/src/github.com/chrissnell/chickenlittle/config.yaml.sample /opt/chickenlittle/config.yaml
+```sudo cp $GOPATH/src/github.com/chrissnell/chickenlittle/config.yaml.sample /opt/chickenlittle/config.yaml```
 
 6. Edit the config file and fill in your Twilio and/or Mailgun API keys, endpoint URLs, etc.  For the click_url_base and callback_url_base, you can use a service like [ngrok](http://ngrok.com) for testing or you can run Chicken Little on a public network and put the base URL to your server here. 
 
